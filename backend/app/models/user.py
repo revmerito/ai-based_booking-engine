@@ -48,6 +48,7 @@ class User(UserBase, table=True):
 
 class UserCreate(SQLModel):
     """Signup request schema - matches frontend SignupRequest"""
+    id: Optional[str] = None # Supabase ID passed from frontend
     email: str
     password: str
     name: str

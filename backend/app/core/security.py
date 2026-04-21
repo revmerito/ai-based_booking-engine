@@ -10,7 +10,25 @@ from passlib.context import CryptContext
 
 from app.core.config import get_settings
 
+import requests
+from functools import lru_cache
+
 settings = get_settings()
+
+@lru_cache()
+def get_jwks():
+    """Fetches Supabase JWKS for ECC verification"""
+    if not settings.SUPABASE_JWKS_URL:
+        # print("No SUPABASE_JWKS_URL configured")
+        return None
+    try:
+        # print(f"Fetching JWKS from {settings.SUPABASE_JWKS_URL}...")
+        response = requests.get(settings.SUPABASE_JWKS_URL, timeout=5)
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        print(f"Error fetching JWKS: {e}")
+        return None
 
 # Password hashing context - bcrypt use kar rahe hain (industry standard)
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
@@ -59,19 +77,54 @@ def create_reset_token(subject: str | Any, expires_delta: timedelta | None = Non
 def verify_token(token: str, token_type: str = "access") -> str | None:
     """
     Token verify karta hai aur subject (user_id) return karta hai.
-    Agar invalid hai toh None return karta hai.
+    Supabase (ECC) aur Local (HS256) dono support karta hai.
     """
+    # 1. Try Local JWT first (for backward compatibility or local tokens)
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        token_type_in_payload = payload.get("type")
-        if token_type_in_payload != token_type:
-            return None
-        subject: str = payload.get("sub")
-        if subject is None:
-            return None
-        return subject
+        # Local tokens usually have a 'type' claim we added
+        if payload.get("type") == token_type:
+            return payload.get("sub")
     except JWTError:
-        return None
+        pass
+
+    # 2. Try Supabase JWT (RS256/ES256 via JWKS)
+    jwks = get_jwks()
+    if jwks:
+        try:
+            unverified_header = jwt.get_unverified_header(token)
+            kid = unverified_header.get("kid")
+            
+            # Find the correct key in JWKS
+            key_data = None
+            for key in jwks.get("keys", []):
+                if key.get("kid") == kid:
+                    key_data = key
+                    break
+            
+            if key_data:
+                # Construct the key and decode
+                from jose import jwk
+                public_key = jwk.construct(key_data)
+                payload = jwt.decode(
+                    token, 
+                    public_key, 
+                    algorithms=["ES256", "RS256"],
+                    options={
+                        "verify_aud": False,
+                        "verify_sub": True,
+                        "verify_iat": True,
+                        "verify_exp": True,
+                        "verify_nbf": True,
+                    }
+                )
+                return payload.get("sub")
+        except JWTError:
+             pass
+        except Exception:
+             pass
+
+    return None
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:

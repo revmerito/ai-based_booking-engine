@@ -21,7 +21,8 @@ engine_args = {
 if "sqlite" in settings.DATABASE_URL:
     connect_args["check_same_thread"] = False
 else:
-    # Postgres specific optimization
+    # Postgres specific optimization (Transaction Pooler compatibility)
+    connect_args["statement_cache_size"] = 0
     engine_args["pool_size"] = 20
     engine_args["max_overflow"] = 10
     engine_args["pool_timeout"] = 30

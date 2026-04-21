@@ -16,32 +16,13 @@ export const authApi = {
     return response;
   },
 
-  signup: async (data: SignupRequest): Promise<AuthResponse> => {
+  signup: async (data: SignupRequest): Promise<{ user: User; message?: string }> => {
     const response = await apiClient.post<{
-      access_token: string;
-      refresh_token: string;
-      token_type: string;
-      expires_in: number;
       user: User;
+      message?: string;
     }>('/auth/signup', data);
 
-    // Backend now returns tokens at root level (same as login)
-    tokenStorage.setTokens({
-      access_token: response.access_token,
-      refresh_token: response.refresh_token,
-      token_type: (response.token_type || 'Bearer') as 'Bearer',
-      expires_in: response.expires_in || 1800,
-    });
-
-    return {
-      user: response.user,
-      tokens: {
-        access_token: response.access_token,
-        refresh_token: response.refresh_token,
-        token_type: (response.token_type || 'Bearer') as 'Bearer',
-        expires_in: response.expires_in || 1800,
-      }
-    };
+    return response;
   },
 
   logout: async (): Promise<void> => {

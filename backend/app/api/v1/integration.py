@@ -227,18 +227,12 @@ async def get_widget_code(
     if not settings:
         settings = IntegrationSettings(hotel_id=current_user.hotel_id)
     
-    # Get Base URLs
+    # Use Base URLs from config
     from app.core.config import get_settings
     config = get_settings()
     
     api_url = config.API_URL
     frontend_url = config.FRONTEND_URL
-
-    # If running locally, check if we should override for production/tunnel
-    # User specified app.gadget4me.in is the production URL
-    if "localhost" in frontend_url or "127.0.0.1" in frontend_url:
-        frontend_url = "https://app.gadget4me.in"
-        api_url = "https://app.gadget4me.in"
 
     hotel_slug = hotel.slug
     

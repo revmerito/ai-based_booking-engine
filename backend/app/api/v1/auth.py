@@ -113,81 +113,73 @@ async def signup(
 ):
     """
     New user + hotel registration.
-    Frontend SignupRequest: email, password, name, hotel_name
-    Returns same structure as login for consistency.
+    Supports Supabase Auth: User already exists in Supabase, now creating local profile.
     """
-    # Password validation - backend security check
-    if len(user_data.password) < 8:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Password must be at least 8 characters long"
+    try:
+        # 1. Check if user already exists in local DB (by email)
+        result = await session.execute(
+            select(User).where(User.email == user_data.email)
         )
-    if not any(c.isupper() for c in user_data.password):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Password must contain at least one uppercase letter"
+        existing_user = result.scalar_one_or_none()
+        
+        if existing_user:
+            # Sync UUID if provided and different
+            if user_data.id and existing_user.id != user_data.id:
+                existing_user.id = user_data.id
+                session.add(existing_user)
+                await session.commit()
+                await session.refresh(existing_user)
+                
+            return {
+                "user": UserRead.model_validate(existing_user).model_dump(),
+                "message": "User already exists and was synced"
+            }
+        
+        # 2. Create hotel with unique slug
+        base_slug = generate_slug(user_data.hotel_name)
+        if not base_slug:
+            base_slug = "hotel-" + str(uuid.uuid4())[:8]
+            
+        hotel_slug = base_slug
+        
+        # Check if slug exists
+        result = await session.execute(
+            select(Hotel).where(Hotel.slug == hotel_slug)
         )
-    if not any(c.isdigit() for c in user_data.password):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Password must contain at least one number"
+        if result.scalar_one_or_none():
+            hotel_slug = f"{base_slug}-{str(uuid.uuid4())[:6]}"
+        
+        hotel = Hotel(
+            name=user_data.hotel_name,
+            slug=hotel_slug
         )
-    
-    # Check if email already exists
-    result = await session.execute(
-        select(User).where(User.email == user_data.email)
-    )
-    existing_user = result.scalar_one_or_none()
-    
-    if existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
+        session.add(hotel)
+        await session.flush()
+        
+        # 3. Create user
+        user_id = user_data.id or str(uuid.uuid4())
+        user = User(
+            id=user_id,
+            email=user_data.email,
+            name=user_data.name,
+            hashed_password="SUPABASE_AUTH",
+            role=UserRole.OWNER,
+            hotel_id=hotel.id
         )
-    
-    # Create hotel first with unique slug
-    hotel_slug = generate_slug(user_data.hotel_name)
-    
-    # Ensure unique slug with UUID suffix if collision
-    result = await session.execute(
-        select(Hotel).where(Hotel.slug == hotel_slug)
-    )
-    if result.scalar_one_or_none():
-        # Use UUID to guarantee uniqueness
-        hotel_slug = f"{hotel_slug}-{str(uuid.uuid4())[:8]}"
-    
-    hotel = Hotel(
-        name=user_data.hotel_name,
-        slug=hotel_slug
-    )
-    session.add(hotel)
-    await session.flush()  # Get hotel.id without committing
-    
-    # Create user with OWNER role
-    user = User(
-        email=user_data.email,
-        name=user_data.name,
-        hashed_password=get_password_hash(user_data.password),
-        role=UserRole.OWNER,
-        hotel_id=hotel.id
-    )
-    session.add(user)
-    await session.commit()
-    await session.refresh(user)
-    await session.refresh(hotel)
-    
-    # Generate tokens - same structure as login
-    access_token = create_access_token(user.id)
-    refresh_token = create_refresh_token(user.id)
-    
-    # Return same structure as login for frontend consistency
-    return {
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-        "token_type": "Bearer",
-        "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-        "user": UserRead.model_validate(user).model_dump()
-    }
+        
+        session.add(user)
+        await session.commit()
+        await session.refresh(user)
+        
+        return {
+            "user": UserRead.model_validate(user).model_dump()
+        }
+    except Exception as e:
+        await session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Registration failed: {str(e)}"
+        )
 
 
 @router.post("/refresh")

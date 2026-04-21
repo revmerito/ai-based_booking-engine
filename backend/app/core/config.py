@@ -39,9 +39,15 @@ class Settings(BaseSettings):
     API_URL: str = "http://localhost:8001"
     FRONTEND_URL: str = "http://localhost:8080"
 
+    # Supabase Configuration
+    SUPABASE_URL: str | None = None
+    SUPABASE_ANON_KEY: str | None = None
+    SUPABASE_JWKS_URL: str | None = None
+
     
     class Config:
-        env_file = ".env"
+        import os
+        env_file = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), ".env")
         extra = "ignore"
 
 
