@@ -22,18 +22,28 @@ class Settings(BaseSettings):
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = True
     
-    # Database - PostgreSQL (Docker)
-    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@127.0.0.1:5433/hotelier_hub"
+    # Database - PostgreSQL
+    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/hotelier_hub"
     
     # JWT Configuration
     # Secret key must be provided via environment variable in production
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 30
     
     # CORS - Frontend URL allow karna hai
-    CORS_ORIGINS: list[str] = ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000", "http://localhost:8080", "http://127.0.0.1:8080", "http://localhost:8081", "http://127.0.0.1:8081"]
+    CORS_ORIGINS: list[str] = [
+        "http://localhost:5173", 
+        "http://127.0.0.1:5173", 
+        "http://localhost:3000", 
+        "http://localhost:8080", 
+        "http://127.0.0.1:8080", 
+        "http://localhost:8081", 
+        "http://127.0.0.1:8081",
+        "https://*.vercel.app",
+        "https://ai-based-booking-engine.vercel.app"
+    ]
 
     # Public URLs (for emails, widgets, etc.)
     API_URL: str = "http://localhost:8001"
