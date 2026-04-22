@@ -17,8 +17,8 @@ class Settings(BaseSettings):
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = False
     
-    # Database - PostgreSQL
-    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/hotelier_hub"
+    # Database - Supabase PostgreSQL
+    DATABASE_URL: str = "postgresql+asyncpg://user:password@localhost:5432/dbname"
     
     # JWT Configuration
     SECRET_KEY: str = "temporary_secret_key_for_build_purposes"
