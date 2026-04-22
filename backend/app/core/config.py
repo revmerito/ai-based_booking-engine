@@ -1,42 +1,47 @@
-"""
-Application Configuration
-Ye file environment variables se settings load karti hai.
-Production mein .env file use karo.
-"""
-from pydantic_settings import BaseSettings
+from typing import List, Union
+from pydantic import AnyHttpUrl, field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
+import os
 
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".env", 
+        env_file_encoding="utf-8", 
+        extra="ignore"
+    )
+
     # App Info
     APP_NAME: str = "Hotelier Hub API"
     APP_VERSION: str = "1.0.0"
-    DEBUG: bool = True
+    DEBUG: bool = False
     
     # Database - PostgreSQL
     DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/hotelier_hub"
     
     # JWT Configuration
-    # Secret key must be provided via environment variable in production
     SECRET_KEY: str = "temporary_secret_key_for_build_purposes"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
     
-    # CORS - Frontend URL allow karna hai
-    CORS_ORIGINS: list[str] = [
-        "http://localhost:5173", 
-        "http://127.0.0.1:5173", 
-        "http://localhost:3000", 
-        "http://localhost:8080", 
-        "http://127.0.0.1:8080", 
-        "http://localhost:8081", 
-        "http://127.0.0.1:8081",
-        "https://*.vercel.app",
+    # CORS - Dynamically handled from ENV
+    CORS_ORIGINS: List[str] = [
+        "http://localhost:5173",
         "https://ai-based-booking-engine.vercel.app"
     ]
 
-    # Public URLs (for emails, widgets, etc.)
+    @field_validator("CORS_ORIGINS", mode="before")
+    @classmethod
+    def assemble_cors_origins(cls, v: Union[str, List[str]]) -> Union[List[str], str]:
+        if isinstance(v, str) and not v.startswith("["):
+            return [i.strip() for i in v.split(",")]
+        elif isinstance(v, (list, str)):
+            return v
+        raise ValueError(v)
+
+    # Public URLs
     API_URL: str = "http://localhost:8001"
     FRONTEND_URL: str = "http://localhost:8080"
 
@@ -44,12 +49,6 @@ class Settings(BaseSettings):
     SUPABASE_URL: str | None = None
     SUPABASE_ANON_KEY: str | None = None
     SUPABASE_JWKS_URL: str | None = None
-
-    
-    class Config:
-        import os
-        env_file = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), ".env")
-        extra = "ignore"
 
 
 @lru_cache()

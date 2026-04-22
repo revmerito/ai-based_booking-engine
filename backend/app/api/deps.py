@@ -40,71 +40,10 @@ async def get_current_user(
     result = await session.execute(select(User).where(User.id == user_id_or_sub))
     user = result.scalar_one_or_none()
     
-    # 3. Fallback: Agar ID se nahi mila, toh Email se dhundho (Identity Linking)
+    # 3. Fallback: Agar ID se nahi mila, toh Identity Syncing/Linking (AuthService)
     if user is None:
-        jwks = get_jwks()
-        try:
-            payload = jwt.decode(
-                token, 
-                jwks if jwks else settings.SECRET_KEY, 
-                algorithms=["ES256", "HS256", "RS256"], 
-                options={"verify_aud": False}
-            )
-            email = payload.get("email")
-            
-            if email:
-                # Pehle Email se check karo (Identity Linking)
-                result = await session.execute(select(User).where(User.email == email))
-                user = result.scalar_one_or_none()
-                
-                if user:
-                    # Sync ID
-                    user.id = user_id_or_sub
-                    session.add(user)
-                    await session.commit()
-                    await session.refresh(user)
-                else:
-                    # LAZY CREATE
-                    from app.models.hotel import Hotel
-                    from app.models.user import UserRole
-                    import re
-                    import uuid
-                    
-                    try:
-                        # 1. Create a default hotel
-                        hotel_name = f"{email.split('@')[0]}'s Hotel"
-                        base_slug = re.sub(r'[^a-z0-9]', '-', hotel_name.lower()).strip('-')
-                        if not base_slug: base_slug = "hotel"
-                        
-                        slug = base_slug
-                        # Check slug collision
-                        result = await session.execute(select(Hotel).where(Hotel.slug == slug))
-                        if result.scalar_one_or_none():
-                            slug = f"{base_slug}-{str(uuid.uuid4())[:6]}"
-                        
-                        new_hotel = Hotel(name=hotel_name, slug=slug)
-                        session.add(new_hotel)
-                        await session.flush()
-                        
-                        # 2. Create the user
-                        user = User(
-                            id=user_id_or_sub,
-                            email=email,
-                            name=email.split('@')[0].capitalize(),
-                            hashed_password="SUPABASE_AUTH",
-                            role=UserRole.OWNER,
-                            hotel_id=new_hotel.id
-                        )
-                        session.add(user)
-                        await session.commit()
-                        await session.refresh(user)
-                    except Exception as inner_e:
-                        await session.rollback()
-                        print(f"Lazy create transaction failed: {inner_e}")
-                        user = None
-        except Exception as e:
-            print(f"Lazy/Linking failed: {e}")
-            pass
+        from app.services.auth_service import AuthService
+        user = await AuthService.sync_user_identity(token, user_id_or_sub, session)
 
     if user is None:
         raise credentials_exception

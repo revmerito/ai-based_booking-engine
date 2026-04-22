@@ -19,7 +19,7 @@ from app.core.config import get_settings
 from app.core.database import init_db
 
 # Import routers
-from app.api.v1 import auth, users, hotels, rooms, bookings, dashboard, rates, payments, availability, reports, public, integration, upload, addons, channel_manager, amenities, properties, competitors, admin, mock_channex
+from app.api.v1 import auth, users, hotels, rooms, bookings, dashboard, rates, payments, availability, reports, public, integration, upload, addons, channel_manager, amenities, properties, competitors, admin
 
 settings = get_settings()
 
@@ -31,12 +31,12 @@ async def lifespan(app: FastAPI):
     Database tables create hote hain startup par.
     """
     # Startup: Database initialize karo
-    print("Starting Hotelier Hub API...")
+    logger.info("Starting Hotelier Hub API...")
     await init_db()
-    print("Database initialized successfully!")
+    logger.info("Database initialized successfully!")
     yield
     # Shutdown: Cleanup if needed
-    print("Shutting down...")
+    logger.info("Shutting down...")
 
 
 # FastAPI app create karo
@@ -48,6 +48,15 @@ app = FastAPI(
     redoc_url="/redoc",
     lifespan=lifespan
 )
+
+# Global Exception Handler
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Global error caught: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "An internal server error occurred. Please try again later."},
+    )
 
 # CORS Middleware - Frontend ko allow karna hai
 app.add_middleware(
@@ -88,7 +97,6 @@ app.include_router(amenities.router, prefix=API_V1_PREFIX)
 app.include_router(properties.router, prefix=API_V1_PREFIX)
 app.include_router(competitors.router, prefix=API_V1_PREFIX)
 app.include_router(admin.router, prefix=API_V1_PREFIX)
-app.include_router(mock_channex.router, prefix=API_V1_PREFIX)
 
 # Mount Static Files
 import os

@@ -89,7 +89,7 @@ async def get_dashboard_stats(
             "totalRevenue": total_revenue,
             "totalBookings": total_bookings,
             "occupancyRate": int(avg_occupancy),
-            "netProfit": total_revenue * 0.7 # Mock profit margin
+            "netProfit": int(total_revenue * 0.7) # Simplified profit margin (Production tip: should include costs/expenses)
         },
         "revenueChart": chart_data,
         "occupancyChart": chart_data
