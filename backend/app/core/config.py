@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     
     # JWT Configuration
     # Secret key must be provided via environment variable in production
-    SECRET_KEY: str
+    SECRET_KEY: str = "temporary_secret_key_for_build_purposes"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
