@@ -4,6 +4,7 @@ FastAPI app initialization with all routers.
 Production-ready with CORS, lifespan events.
 """
 from contextlib import asynccontextmanager
+import logging
 import sys
 import asyncio
 
@@ -12,8 +13,11 @@ if sys.platform == 'win32':
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 # Reload Trigger 2026-04-22 - Force Fresh Build
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+
+logger = logging.getLogger(__name__)
 
 from app.core.config import get_settings
 from app.core.database import init_db
