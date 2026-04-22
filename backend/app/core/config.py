@@ -7,15 +7,6 @@ from pydantic_settings import BaseSettings
 from functools import lru_cache
 
 
-"""
-Application Configuration
-Ye file environment variables se settings load karti hai.
-Production mein .env file use karo.
-"""
-from pydantic_settings import BaseSettings
-from functools import lru_cache
-
-
 class Settings(BaseSettings):
     # App Info
     APP_NAME: str = "Hotelier Hub API"
