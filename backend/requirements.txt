@@ -16,4 +16,4 @@ aiofiles
 # bcrypt
 beautifulsoup4
 duckduckgo-search
-playwright
+redis

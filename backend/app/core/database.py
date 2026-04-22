@@ -11,6 +11,12 @@ from app.core.config import get_settings
 
 settings = get_settings()
 
+if not settings.DATABASE_URL:
+    raise RuntimeError(
+        "DATABASE_URL environment variable is not set. "
+        "Please configure it in your Railway service variables."
+    )
+
 # Async engine banate hain - SQLite ke liye aiosqlite driver
 connect_args = {}
 engine_args = {
