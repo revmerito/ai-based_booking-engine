@@ -1,0 +1,19 @@
+fastapi
+uvicorn
+sqlmodel
+pydantic-settings
+python-jose[cryptography]
+passlib[bcrypt]
+argon2-cffi
+aiosqlite
+asyncpg
+python-multipart
+gunicorn
+email-validator
+requests
+Pillow
+aiofiles
+# bcrypt
+beautifulsoup4
+duckduckgo-search
+playwright
