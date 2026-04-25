@@ -22,5 +22,5 @@ COPY . .
 # Expose port
 EXPOSE 8001
 
-# Default command (overridden in docker-compose for hot-reload)
-CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001"]
+# Default command (uses Railway's $PORT or 8001)
+CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-8001}

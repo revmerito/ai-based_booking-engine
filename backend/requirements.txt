@@ -5,7 +5,6 @@ pydantic-settings
 python-jose[cryptography]
 passlib[bcrypt]
 argon2-cffi
-aiosqlite
 asyncpg
 python-multipart
 gunicorn
@@ -17,3 +16,8 @@ aiofiles
 # bcrypt
 duckduckgo-search
 pyjwt
+langchain-openai
+langgraph
+langchain-core
+redis
+supabase

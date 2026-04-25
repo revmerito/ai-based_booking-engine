@@ -44,7 +44,7 @@ async def upload_file(
             raise HTTPException(status_code=413, detail="File too large")
         
         # 3. Choose bucket
-        bucket_id = "reports" if original_ext == ".pdf" else "hotel-photos"
+        bucket_id = "reports" if original_ext == ".pdf" else "hotel-assets"
         
         # 4. Generate unique filename
         unique_filename = f"{uuid.uuid4()}{original_ext}"
@@ -58,7 +58,7 @@ async def upload_file(
         )
         
         # 6. Get Public URL (if public bucket)
-        if bucket_id == "hotel-photos":
+        if bucket_id == "hotel-assets":
             url_res = supabase_client.storage.from_(bucket_id).get_public_url(unique_filename)
             return {"url": url_res}
         else:

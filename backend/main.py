@@ -65,41 +65,6 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# Security Headers Middleware
-class RequestLoggingMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
-        logger.info(f"Incoming request: {request.method} {request.url} from {request.client.host if request.client else 'unknown'}")
-        logger.info(f"Headers: {dict(request.headers)}")
-        try:
-            response = await call_next(request)
-            logger.info(f"Response status: {response.status_code}")
-            return response
-        except Exception as e:
-            logger.error(f"Request processing error: {e}")
-            raise
-
-class SecurityHeadersMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
-        response = await call_next(request)
-        response.headers["X-Frame-Options"] = "DENY"
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["X-XSS-Protection"] = "1; mode=block"
-        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
-        # CSP: Allow necessary resources while being secure
-        response.headers["Content-Security-Policy"] = (
-            "default-src 'self'; "
-            "img-src 'self' data: https: blob:; "
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
-            "style-src 'self' 'unsafe-inline'; "
-            "font-src 'self' https:; "
-            "connect-src 'self' https:;"
-        )
-        return response
-
-app.add_middleware(RequestLoggingMiddleware)
-app.add_middleware(SecurityHeadersMiddleware)
-
 # CORS Middleware - Frontend ko allow karna hai
 app.add_middleware(
     CORSMiddleware,
@@ -108,6 +73,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 
 # Health check endpoint

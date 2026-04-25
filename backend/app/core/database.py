@@ -11,27 +11,26 @@ from app.core.config import get_settings
 
 settings = get_settings()
 
-# Async engine banate hain - SQLite ke liye aiosqlite driver
-connect_args = {}
-engine_args = {
-    "echo": False,  # Pehle settings.DEBUG tha, messy lag raha tha isliye band kar diya
-    "future": True,
+# Supabase/PgBouncer Compatibility Configuration
+connect_args = {
+    "statement_cache_size": 0
 }
 
-if "sqlite" in settings.DATABASE_URL:
-    connect_args["check_same_thread"] = False
-else:
-    # Postgres specific optimization
-    engine_args["pool_size"] = 20
-    engine_args["max_overflow"] = 10
-    engine_args["pool_timeout"] = 30
-    engine_args["pool_pre_ping"] = True
+engine_args = {
+    "echo": False,
+    "future": True,
+    "pool_size": 20,
+    "max_overflow": 10,
+    "pool_timeout": 30,
+    "pool_pre_ping": True,
+}
 
 engine = create_async_engine(
     settings.DATABASE_URL,
     connect_args=connect_args,
     **engine_args
 )
+
 
 # Session factory - har request ke liye new session
 async_session = sessionmaker(

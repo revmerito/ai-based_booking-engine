@@ -40,9 +40,17 @@ export function DashboardLayout() {
   }
 
   // Redirect to login if not authenticated
+  const { user } = useAuth();
+  
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
+
+  // Industry Standard: Agar user logged-in hai par hotel nahi hai, to onboarding pe bhejo
+  if (user && !user.hotel_id) {
+    return <Navigate to="/onboarding" replace />;
+  }
+
 
   return (
     <SidebarProvider>

@@ -3,17 +3,19 @@ import os
 import sys
 
 # Add backend directory to python path
-backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+current_dir = os.path.dirname(os.path.abspath(__file__))
+backend_dir = os.path.abspath(os.path.join(current_dir, "../../"))
 sys.path.append(backend_dir)
+
 
 from app.core.supabase import get_supabase
 
 async def init_storage():
-    print("🚀 Initializing Supabase Storage Buckets...")
+    print("Initializing Supabase Storage Buckets...")
     supabase = get_supabase()
     
     buckets = [
-        {"id": "hotel-photos", "public": True},
+        {"id": "hotel-assets", "public": True},
         {"id": "reports", "public": False}
     ]
     
@@ -22,12 +24,13 @@ async def init_storage():
             print(f"Creating bucket: {bucket['id']}...")
             # create_bucket might fail if it exists, so we handle it
             supabase.storage.create_bucket(bucket["id"], options={"public": bucket["public"]})
-            print(f"   ✅ Created.")
+            print(f"   Created.")
         except Exception as e:
             if "already exists" in str(e).lower():
-                print(f"   ℹ️ Already exists.")
+                print(f"   Already exists.")
             else:
-                print(f"   ❌ Error: {e}")
+                print(f"   Error: {e}")
+
 
 if __name__ == "__main__":
     asyncio.run(init_storage())

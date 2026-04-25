@@ -20,7 +20,6 @@ const signupSchema = z.object({
     .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
     .regex(/[0-9]/, 'Password must contain at least one number'),
   confirmPassword: z.string(),
-  hotelName: z.string().min(2, 'Hotel name must be at least 2 characters'),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'Passwords do not match',
   path: ['confirmPassword'],
@@ -48,11 +47,11 @@ export function SignupPage() {
         name: data.name,
         email: data.email,
         password: data.password,
-        hotel_name: data.hotelName,
+        hotel_name: 'TEMPORARY', // Backend trigger handles profile creation
       });
       toast({
         title: 'Account created!',
-        description: 'Welcome to Hotel Dashboard. Let\'s set up your property.',
+        description: 'Welcome! Let\'s set up your property next.',
       });
       navigate('/dashboard');
     } catch (error) {
@@ -116,21 +115,6 @@ export function SignupPage() {
                 />
                 {errors.email && (
                   <p className="text-xs text-destructive">{errors.email.message}</p>
-                )}
-              </div>
-
-              {/* Hotel Name */}
-              <div className="space-y-2">
-                <Label htmlFor="hotelName">Hotel Name</Label>
-                <Input
-                  id="hotelName"
-                  type="text"
-                  placeholder="The Grand Hotel"
-                  {...register('hotelName')}
-                  className={errors.hotelName ? 'border-destructive' : ''}
-                />
-                {errors.hotelName && (
-                  <p className="text-xs text-destructive">{errors.hotelName.message}</p>
                 )}
               </div>
 
@@ -214,6 +198,7 @@ export function SignupPage() {
             </CardFooter>
           </form>
         </Card>
+
       </div>
     </div>
   );

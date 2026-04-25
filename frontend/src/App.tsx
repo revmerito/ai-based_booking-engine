@@ -8,7 +8,9 @@ import { AuthProvider } from "@/contexts/AuthContext";
 // Auth Pages
 import LoginPage from "@/pages/auth/Login";
 import SignupPage from "@/pages/auth/Signup";
+import OnboardingPage from "@/pages/auth/Onboarding";
 import ForgotPasswordPage from "@/pages/auth/ForgotPassword";
+
 import ResetPasswordPage from "@/pages/auth/ResetPassword";
 
 // Dashboard Layout & Pages
@@ -56,8 +58,10 @@ const App = () => (
             {/* Public Auth Routes */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
+            <Route path="/onboarding" element={<OnboardingPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
+
 
             {/* Protected Dashboard Routes */}
             <Route element={<DashboardLayout />}>

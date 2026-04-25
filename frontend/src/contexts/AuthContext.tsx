@@ -116,7 +116,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signup = useCallback(async (data: SignupRequest) => {
     setIsLoading(true);
     try {
-      // 1. Supabase Auth me user create karo
+      // 1. Supabase Auth me user create karo (Industry Standard)
+      // Postgres Trigger will automatically create the profile in 'users' table
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
@@ -130,7 +131,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (authError) throw authError;
       if (!authData.user) throw new Error('Signup failed');
 
-      // 2. Token save karo
+      // 2. Token save karo (agar session mila)
       if (authData.session) {
         tokenStorage.setTokens({
           access_token: authData.session.access_token,
@@ -138,17 +139,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           token_type: 'Bearer',
           expires_in: authData.session.expires_in || 3600,
         });
-
-        // 3. Backend me Hotel aur Profile initialize karo
-        const response = await authApi.register(data.name, data.hotel_name);
-        setUser(response.user);
-
-        // 4. Hotel data load karo
+        
+        // Profile check backend se
         try {
-          const hotelData = await apiClient.get<Hotel>('/hotels/me');
-          setHotel(hotelData);
+          const currentUser = await authApi.getCurrentUser();
+          setUser(currentUser);
+          
+          if (currentUser.hotel_id) {
+             const hotelData = await apiClient.get<Hotel>('/hotels/me');
+             setHotel(hotelData);
+          }
         } catch {
-          console.log('Could not fetch hotel data');
+          // Profile might be being created by trigger, or hotel not yet set
+          // DashboardLayout will handle the redirect to /onboarding
         }
       } else {
         // Confirmation required case
@@ -157,10 +160,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           description: 'Please check your email to confirm your account before logging in.',
         });
       }
+      
+      toast({
+        title: 'Welcome!',
+        description: 'Account created successfully.',
+      });
+      
+    } catch (error) {
+       const errorMessage = error instanceof Error ? error.message : 'Signup failed';
+       toast({
+         variant: 'destructive',
+         title: 'Signup failed',
+         description: errorMessage,
+       });
+       throw error;
     } finally {
       setIsLoading(false);
     }
   }, []);
+
+
 
   const logout = useCallback(async () => {
     setIsLoading(true);
