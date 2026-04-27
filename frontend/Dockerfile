@@ -10,8 +10,16 @@ RUN npm install
 # Copy application code
 COPY . .
 
+# Set Build Arguments for Vite (must be available during npm run build)
+ARG VITE_API_URL
+ARG VITE_SUPABASE_URL
+ARG VITE_SUPABASE_ANON_KEY
+
+ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL
+ENV VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY
+
 # Build production bundle
-# VITE_API_URL must be set as Railway environment variable
 RUN npm run build
 
 # Serve the static build with a lightweight server

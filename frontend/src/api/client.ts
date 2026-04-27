@@ -3,7 +3,20 @@
 
 import { ApiError, AuthTokens } from '@/types/api';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+// Dynamic API URL selection
+const getBaseUrl = () => {
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
+  
+  const hostname = window.location.hostname;
+  if (hostname === 'staybooker.ai' || hostname === 'www.staybooker.ai') {
+    return 'https://api.staybooker.ai/api/v1';
+  }
+  
+  // Local development fallback
+  return 'http://localhost:8001/api/v1';
+};
+
+const API_BASE_URL = getBaseUrl();
 
 
 // Token storage keys
