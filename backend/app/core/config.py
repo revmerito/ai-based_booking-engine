@@ -46,12 +46,12 @@ class Settings(BaseSettings):
         # Ensure asyncpg driver
         if v.startswith("postgresql://"):
             v = v.replace("postgresql://", "postgresql+asyncpg://", 1)
-        # Ensure sslmode=require for Supabase
-        if "supabase.com" in v and "sslmode=require" not in v:
+        # Ensure ssl=require for Supabase with asyncpg
+        if "supabase.com" in v and "ssl=require" not in v:
             if "?" in v:
-                v += "&sslmode=require"
+                v += "&ssl=require"
             else:
-                v += "?sslmode=require"
+                v += "?ssl=require"
         return v
 
     @field_validator("CORS_ORIGINS", mode="before")
