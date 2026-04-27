@@ -171,11 +171,17 @@ export function DashboardPage() {
                 <AnimatedCounter value={stats?.today_arrivals || 0} />
               </div>
               <div className="flex items-center text-xs text-muted-foreground mt-1">
-                {/* Mock Trend for "Rich" feel */}
-                <span className="text-green-600 flex items-center mr-1 font-medium bg-green-100 dark:bg-green-900/30 px-1.5 py-0.5 rounded-md">
-                  <ArrowUpRight className="h-3 w-3 mr-0.5" /> +12%
-                </span>
-                <span>vs last week</span>
+                {stats?.trends?.arrivals !== undefined && (
+                  <>
+                    <span className={`flex items-center mr-1 font-medium px-1.5 py-0.5 rounded-md ${
+                      stats.trends.arrivals >= 0 ? 'text-green-600 bg-green-100 dark:bg-green-900/30' : 'text-red-600 bg-red-100 dark:bg-red-900/30'
+                    }`}>
+                      {stats.trends.arrivals >= 0 ? <ArrowUpRight className="h-3 w-3 mr-0.5" /> : <ArrowDownRight className="h-3 w-3 mr-0.5" />}
+                      {Math.abs(stats.trends.arrivals)}%
+                    </span>
+                    <span>vs yesterday</span>
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -195,11 +201,10 @@ export function DashboardPage() {
                 <AnimatedCounter value={stats?.today_departures || 0} />
               </div>
               <div className="flex items-center text-xs text-muted-foreground mt-1">
-                {/* Added consistency wrapper */}
                 <span className="text-slate-500 flex items-center mr-1 font-medium bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-md">
-                  - 0%
+                   {stats?.today_departures || 0}
                 </span>
-                <span>on time</span>
+                <span>scheduled check-outs</span>
               </div>
             </CardContent>
           </Card>
@@ -219,10 +224,17 @@ export function DashboardPage() {
                 <AnimatedCounter value={stats?.current_occupancy || 0} />
               </div>
               <div className="flex items-center text-xs text-muted-foreground mt-1">
-                <span className="text-green-600 flex items-center mr-1 font-medium bg-green-100 dark:bg-green-900/30 px-1.5 py-0.5 rounded-md">
-                  <ArrowUpRight className="h-3 w-3 mr-0.5" /> +5%
-                </span>
-                <span>vs yesterday</span>
+                {stats?.trends?.occupancy !== undefined && (
+                   <>
+                    <span className={`flex items-center mr-1 font-medium px-1.5 py-0.5 rounded-md ${
+                      stats.trends.occupancy >= 0 ? 'text-green-600 bg-green-100 dark:bg-green-900/30' : 'text-red-600 bg-red-100 dark:bg-red-900/30'
+                    }`}>
+                      {stats.trends.occupancy >= 0 ? <ArrowUpRight className="h-3 w-3 mr-0.5" /> : <ArrowDownRight className="h-3 w-3 mr-0.5" />}
+                      {Math.abs(stats.trends.occupancy)}%
+                    </span>
+                    <span>vs yesterday</span>
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -245,10 +257,15 @@ export function DashboardPage() {
                 />
               </div>
               <div className="flex items-center text-xs text-green-600/80 dark:text-green-400/80 mt-1">
-                <span className="flex items-center mr-1 font-bold">
-                  <ArrowUpRight className="h-3 w-3 mr-0.5" /> +18.2%
-                </span>
-                <span>from bookings today</span>
+                {stats?.trends?.revenue !== undefined && (
+                  <>
+                    <span className="flex items-center mr-1 font-bold">
+                      {stats.trends.revenue >= 0 ? <ArrowUpRight className="h-3 w-3 mr-0.5" /> : <ArrowDownRight className="h-3 w-3 mr-0.5" />}
+                      {Math.abs(stats.trends.revenue)}%
+                    </span>
+                    <span>growth today</span>
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>

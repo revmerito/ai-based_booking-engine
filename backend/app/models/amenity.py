@@ -18,6 +18,8 @@ class Amenity(SQLModel, table=True):
     name: str
     icon_slug: str = Field(default="star") # Lucide icon name, e.g. "wifi", "waves"
     category: str = Field(default="general") # general, bathroom, tech, etc.
+    scope: str = Field(default="room", description="room or hotel")
+    description: Optional[str] = None
     is_featured: bool = Field(default=False) # Show on room card?
     
     created_at: datetime = Field(default_factory=datetime.utcnow)
@@ -29,6 +31,8 @@ class AmenityCreate(BaseModel):
     name: str
     icon_slug: str
     category: str = "general"
+    scope: str = "room"
+    description: Optional[str] = None
     is_featured: bool = False
 
 class AmenityRead(BaseModel):
@@ -36,4 +40,6 @@ class AmenityRead(BaseModel):
     name: str
     icon_slug: str
     category: str
+    scope: str
+    description: Optional[str] = None
     is_featured: bool

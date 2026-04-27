@@ -41,6 +41,7 @@ import { Button } from '@/components/ui/button';
 // Navigation items for the dashboard
 const mainNavItems = [
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
+  { title: 'Analytics', url: '/analytics', icon: LineChart },
   { title: 'AI Assistant', url: '/agent', icon: Bot },
 
   { title: 'Rooms', url: '/rooms', icon: Bed },

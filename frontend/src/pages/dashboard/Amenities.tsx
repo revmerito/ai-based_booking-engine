@@ -18,6 +18,7 @@ interface Amenity {
     name: string;
     icon_slug: string;
     category: string;
+    scope: 'hotel' | 'room';
     is_featured: boolean;
 }
 
@@ -45,6 +46,7 @@ export default function Amenities() {
         name: '',
         icon_slug: 'star',
         category: 'general',
+        scope: 'room' as 'hotel' | 'room',
         is_featured: false
     });
 
@@ -78,7 +80,7 @@ export default function Amenities() {
             const newAmenity = await apiClient.post<Amenity>('/amenities', formData);
             setAmenities([...amenities, newAmenity]);
             setIsDialogOpen(false);
-            setFormData({ name: '', icon_slug: 'star', category: 'general', is_featured: false });
+            setFormData({ name: '', icon_slug: 'star', category: 'general', scope: 'room', is_featured: false });
             toast({ title: "Success", description: "Amenity created." });
         } catch (error) {
             toast({ variant: "destructive", title: "Error", description: "Failed to create amenity." });
@@ -147,6 +149,19 @@ export default function Amenities() {
                                     </Select>
                                 </div>
                                 <div className="space-y-2">
+                                    <Label>Scope</Label>
+                                    <Select
+                                        value={formData.scope}
+                                        onValueChange={(val) => setFormData({ ...formData, scope: val as 'hotel' | 'room' })}
+                                    >
+                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="hotel">Hotel Level</SelectItem>
+                                            <SelectItem value="room">Room Level</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
                                     <Label>Icon</Label>
                                     <Select
                                         value={formData.icon_slug}
@@ -203,6 +218,7 @@ export default function Amenities() {
                                     <TableHead className="w-[50px]">Icon</TableHead>
                                     <TableHead>Name</TableHead>
                                     <TableHead>Category</TableHead>
+                                    <TableHead>Scope</TableHead>
                                     <TableHead>Highlighted</TableHead>
                                     <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
@@ -223,6 +239,11 @@ export default function Amenities() {
                                         </TableCell>
                                         <TableCell className="font-medium">{amenity.name}</TableCell>
                                         <TableCell><Badge variant="outline" className="capitalize">{amenity.category}</Badge></TableCell>
+                                        <TableCell>
+                                            <Badge variant={amenity.scope === 'hotel' ? 'default' : 'secondary'} className="capitalize">
+                                                {amenity.scope}
+                                            </Badge>
+                                        </TableCell>
                                         <TableCell>
                                             {amenity.is_featured && (
                                                 <Badge variant="secondary" className="bg-yellow-50 text-yellow-700 border-yellow-200">

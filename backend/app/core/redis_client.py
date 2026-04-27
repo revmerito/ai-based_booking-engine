@@ -8,15 +8,27 @@ class RedisClient:
     @classmethod
     def get_instance(cls) -> redis.Redis:
         if cls._instance is None:
-            cls._instance = redis.Redis(
-                host=os.getenv("REDIS_HOST", "localhost"),
-                port=int(os.getenv("REDIS_PORT", 6379)),
-                password=os.getenv("REDIS_PASSWORD", None),
-                db=0,
-                decode_responses=True,
-                socket_timeout=1,
-                socket_connect_timeout=1
-            )
+            from app.core.config import get_settings
+            settings = get_settings()
+            
+            # If REDIS_URL is provided (typical for Railway/Heroku), use it directly
+            if settings.REDIS_URL:
+                cls._instance = redis.Redis.from_url(
+                    settings.REDIS_URL,
+                    decode_responses=True,
+                    socket_timeout=1
+                )
+            else:
+                # Fallback to discrete parameters
+                cls._instance = redis.Redis(
+                    host=settings.REDIS_HOST,
+                    port=settings.REDIS_PORT,
+                    password=settings.REDIS_PASSWORD,
+                    db=0,
+                    decode_responses=True,
+                    socket_timeout=1,
+                    socket_connect_timeout=1
+                )
         return cls._instance
 
     @classmethod

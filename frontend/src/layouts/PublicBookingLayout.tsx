@@ -1,6 +1,20 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, useParams } from 'react-router-dom';
+import { useEffect } from 'react';
+import { startTimeTracking, stopTimeTracking, trackEvent } from '@/lib/tracker';
 
 export function PublicBookingLayout() {
+    const { hotelSlug } = useParams();
+
+    useEffect(() => {
+        if (hotelSlug) {
+            startTimeTracking(hotelSlug);
+            trackEvent(hotelSlug, "page_view");
+        }
+        return () => {
+            stopTimeTracking();
+        };
+    }, [hotelSlug]);
+
     return (
         <div className="min-h-screen bg-slate-50">
             <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">

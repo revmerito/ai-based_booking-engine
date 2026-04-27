@@ -102,6 +102,11 @@ export function SettingsPage() {
       logo_url: hotel?.logo_url || '',
       notify_new_booking: hotel?.settings?.notify_new_booking !== false,
       notify_cancellation: hotel?.settings?.notify_cancellation !== false,
+      cancellation_policy: hotel?.settings?.cancellation_policy || '',
+      payment_policy: hotel?.settings?.payment_policy || '',
+      child_policy: hotel?.settings?.child_policy || '',
+      privacy_policy: hotel?.settings?.privacy_policy || '',
+      important_info: hotel?.settings?.important_info || '',
     }
   });
 
@@ -165,371 +170,466 @@ export function SettingsPage() {
         </p>
       </div>
 
-      <Tabs defaultValue="hotel" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 lg:w-auto">
-          <TabsTrigger value="hotel" className="gap-2">
+      <Tabs defaultValue="hotel" orientation="vertical" className="flex flex-col md:flex-row gap-6">
+        <TabsList className="flex flex-row md:flex-col h-auto md:w-64 justify-start items-stretch gap-1 bg-muted/30 p-2 rounded-xl border">
+          <TabsTrigger 
+            value="hotel" 
+            className="flex justify-start gap-3 px-4 py-3 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary transition-all"
+          >
             <Building2 className="h-4 w-4" />
-            <span className="hidden sm:inline">Hotel</span>
+            <span className="font-medium">Hotel Profile</span>
           </TabsTrigger>
-          <TabsTrigger value="team" className="gap-2">
+          <TabsTrigger 
+            value="team" 
+            className="flex justify-start gap-3 px-4 py-3 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary transition-all"
+          >
             <Users className="h-4 w-4" />
-            <span className="hidden sm:inline">Team</span>
+            <span className="font-medium">Team Members</span>
           </TabsTrigger>
-          <TabsTrigger value="notifications" className="gap-2">
+          <TabsTrigger 
+            value="notifications" 
+            className="flex justify-start gap-3 px-4 py-3 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary transition-all"
+          >
             <Bell className="h-4 w-4" />
-            <span className="hidden sm:inline">Notifications</span>
+            <span className="font-medium">Notifications</span>
           </TabsTrigger>
-
-          <TabsTrigger value="promos" className="gap-2">
+          <TabsTrigger 
+            value="promos" 
+            className="flex justify-start gap-3 px-4 py-3 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary transition-all"
+          >
             <Tag className="h-4 w-4" />
-            <span className="hidden sm:inline">Promotions</span>
+            <span className="font-medium">Promotions</span>
           </TabsTrigger>
-
-          <TabsTrigger value="branding" className="gap-2">
+          <TabsTrigger 
+            value="branding" 
+            className="flex justify-start gap-3 px-4 py-3 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary transition-all"
+          >
             <Palette className="h-4 w-4" />
-            <span className="hidden sm:inline">Branding</span>
+            <span className="font-medium">Branding</span>
+          </TabsTrigger>
+          <TabsTrigger 
+            value="policies" 
+            className="flex justify-start gap-3 px-4 py-3 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary transition-all"
+          >
+            <Key className="h-4 w-4" />
+            <span className="font-medium">Policies & Privacy</span>
           </TabsTrigger>
         </TabsList>
 
-        {/* Hotel Settings */}
-        <TabsContent value="hotel" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Hotel Profile</CardTitle>
-              <CardDescription>
-                Basic information about your property
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="hotelName">Hotel Name</Label>
-                  <Input
-                    id="hotelName"
-                    value={formData.name}
-                    onChange={(e) => handleUpdate('root', 'name', e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="starRating">Star Rating</Label>
-                  <Select
-                    value={String(formData.star_rating)}
-                    onValueChange={(val) => handleUpdate('root', 'star_rating', val)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">1 Star</SelectItem>
-                      <SelectItem value="2">2 Stars</SelectItem>
-                      <SelectItem value="3">3 Stars</SelectItem>
-                      <SelectItem value="4">4 Stars</SelectItem>
-                      <SelectItem value="5">5 Stars</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => handleUpdate('root', 'description', e.target.value)}
-                  rows={3}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Location & Contact</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="address">Street Address</Label>
-                  <Input
-                    id="address"
-                    value={formData.address.street}
-                    onChange={(e) => handleUpdate('address', 'street', e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="city">City</Label>
-                  <Input
-                    id="city"
-                    value={formData.address.city}
-                    onChange={(e) => handleUpdate('address', 'city', e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone</Label>
-                  <Input
-                    id="phone"
-                    value={formData.contact.phone}
-                    onChange={(e) => handleUpdate('contact', 'phone', e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.contact.email}
-                    onChange={(e) => handleUpdate('contact', 'email', e.target.value)}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Operational Settings</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="checkIn">Check-in Time</Label>
-                  <Input
-                    id="checkIn"
-                    type="time"
-                    value={formData.settings.check_in_time}
-                    onChange={(e) => handleUpdate('settings', 'check_in_time', e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="checkOut">Check-out Time</Label>
-                  <Input
-                    id="checkOut"
-                    type="time"
-                    value={formData.settings.check_out_time}
-                    onChange={(e) => handleUpdate('settings', 'check_out_time', e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="currency">Currency</Label>
-                  <Select
-                    value={formData.settings.currency}
-                    onValueChange={(val) => handleUpdate('settings', 'currency', val)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="INR">INR - Indian Rupee</SelectItem>
-                      <SelectItem value="USD">USD - US Dollar</SelectItem>
-                      <SelectItem value="EUR">EUR - Euro</SelectItem>
-                      <SelectItem value="GBP">GBP - British Pound</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="timezone">Timezone</Label>
-                  <Select
-                    value={formData.settings.timezone}
-                    onValueChange={(val) => handleUpdate('settings', 'timezone', val)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Asia/Kolkata">Asia/Kolkata (IST)</SelectItem>
-                      <SelectItem value="Asia/Dubai">Asia/Dubai (GST)</SelectItem>
-                      <SelectItem value="Europe/London">Europe/London (GMT)</SelectItem>
-                      <SelectItem value="America/New_York">America/New_York (EST)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="flex justify-end">
-                <Button onClick={handleSave} disabled={isSaving} className="gap-2">
-                  {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                  Save Changes
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Team Settings */}
-        <TabsContent value="team" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Team Members</CardTitle>
-              <CardDescription>
-                Manage who has access to this dashboard
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {/* Team List Generator */}
-                <TeamList />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Notifications Settings */}
-        <TabsContent value="notifications" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Email Notifications</CardTitle>
-              <CardDescription>
-                Choose what emails you want to receive
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {[
-                { id: 'notify_new_booking', label: 'New Booking', description: 'Get notified when a new booking is made' },
-                { id: 'notify_cancellation', label: 'Cancellations', description: 'Get notified when a booking is cancelled' },
-              ].map((item) => (
-                <div key={item.id} className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">{item.label}</p>
-                    <p className="text-sm text-muted-foreground">{item.description}</p>
-                  </div>
-                  <Switch
-                    checked={formData.settings[item.id] !== false} // Default to true if undefined
-                    onCheckedChange={(checked) => handleUpdate('settings', item.id, checked)}
-                  />
-                </div>
-              ))}
-              <div className="flex justify-end mt-4">
-                <Button onClick={handleSave} disabled={isSaving} className="gap-2">
-                  {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                  Save Preferences
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-
-        {/* Promotions Settings */}
-        <TabsContent value="promos" className="space-y-6">
-          <PromoManager />
-        </TabsContent>
-
-        {/* Branding Settings - Coming Soon */}
-        <TabsContent value="branding" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Booking Engine Branding</CardTitle>
-              <CardDescription>
-                Customize how your booking engine looks to guests
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="primaryColor">Primary Color</Label>
-                  <div className="flex items-center gap-2">
+        <div className="flex-1">
+          {/* Hotel Settings */}
+          <TabsContent value="hotel" className="space-y-6 mt-0">
+            <Card>
+              <CardHeader>
+                <CardTitle>Hotel Profile</CardTitle>
+                <CardDescription>
+                  Basic information about your property
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="hotelName">Hotel Name</Label>
                     <Input
-                      id="primaryColor"
-                      type="color"
-                      className="w-12 h-10 p-1 cursor-pointer"
-                      value={formData.settings.primary_color || '#3B82F6'}
-                      onChange={(e) => handleUpdate('settings', 'primary_color', e.target.value)}
-                    />
-                    <Input
-                      value={formData.settings.primary_color || '#3B82F6'}
-                      onChange={(e) => handleUpdate('settings', 'primary_color', e.target.value)}
-                      placeholder="#3B82F6"
+                      id="hotelName"
+                      value={formData.name}
+                      onChange={(e) => handleUpdate('root', 'name', e.target.value)}
                     />
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    This color will be used for buttons and highlights on your booking page.
-                  </p>
+                  <div className="space-y-2">
+                    <Label htmlFor="starRating">Star Rating</Label>
+                    <Select
+                      value={String(formData.star_rating)}
+                      onValueChange={(val) => handleUpdate('root', 'star_rating', val)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">1 Star</SelectItem>
+                        <SelectItem value="2">2 Stars</SelectItem>
+                        <SelectItem value="3">3 Stars</SelectItem>
+                        <SelectItem value="4">4 Stars</SelectItem>
+                        <SelectItem value="5">5 Stars</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="logoUpload">Hotel Logo</Label>
-                  <div className="flex gap-4 items-start">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="relative"
-                          disabled={isSaving}
-                        >
-                          {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Upload className="h-4 w-4 mr-2" />}
-                          Upload New Logo
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="absolute inset-0 opacity-0 cursor-pointer"
-                            onChange={async (e) => {
-                              const file = e.target.files?.[0];
-                              if (!file) return;
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => handleUpdate('root', 'description', e.target.value)}
+                    rows={3}
+                  />
+                </div>
+              </CardContent>
+            </Card>
 
-                              try {
-                                setIsSaving(true);
-                                const formData = new FormData();
-                                formData.append('file', file);
+            <Card>
+              <CardHeader>
+                <CardTitle>Location & Contact</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="address">Street Address</Label>
+                    <Input
+                      id="address"
+                      value={formData.address.street}
+                      onChange={(e) => handleUpdate('address', 'street', e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="city">City</Label>
+                    <Input
+                      id="city"
+                      value={formData.address.city}
+                      onChange={(e) => handleUpdate('address', 'city', e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone</Label>
+                    <Input
+                      id="phone"
+                      value={formData.contact.phone}
+                      onChange={(e) => handleUpdate('contact', 'phone', e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.contact.email}
+                      onChange={(e) => handleUpdate('contact', 'email', e.target.value)}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-                                const response = await apiClient.post<{ url: string }>('/upload', formData);
-                                handleUpdate('settings', 'logo_url', response.url);
+            <Card>
+              <CardHeader>
+                <CardTitle>Operational Settings</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="checkIn">Check-in Time</Label>
+                    <Input
+                      id="checkIn"
+                      type="time"
+                      value={formData.settings.check_in_time}
+                      onChange={(e) => handleUpdate('settings', 'check_in_time', e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="checkOut">Check-out Time</Label>
+                    <Input
+                      id="checkOut"
+                      type="time"
+                      value={formData.settings.check_out_time}
+                      onChange={(e) => handleUpdate('settings', 'check_out_time', e.target.value)}
+                    />
+                  </div>
 
-                                toast({
-                                  title: "Logo Uploaded",
-                                  description: "Don't forget to click Save Branding to apply changes.",
-                                });
-                              } catch (error) {
-                                toast({
-                                  variant: "destructive",
-                                  title: "Upload Failed",
-                                  description: "Could not upload logo. Try a smaller file.",
-                                });
-                              } finally {
-                                setIsSaving(false);
-                              }
-                            }}
-                          />
-                        </Button>
-                        {formData.settings.logo_url && (
+                  <div className="space-y-2">
+                    <Label htmlFor="currency">Currency</Label>
+                    <Select
+                      value={formData.settings.currency}
+                      onValueChange={(val) => handleUpdate('settings', 'currency', val)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="INR">INR - Indian Rupee</SelectItem>
+                        <SelectItem value="USD">USD - US Dollar</SelectItem>
+                        <SelectItem value="EUR">EUR - Euro</SelectItem>
+                        <SelectItem value="GBP">GBP - British Pound</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="timezone">Timezone</Label>
+                    <Select
+                      value={formData.settings.timezone}
+                      onValueChange={(val) => handleUpdate('settings', 'timezone', val)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Asia/Kolkata">Asia/Kolkata (IST)</SelectItem>
+                        <SelectItem value="Asia/Dubai">Asia/Dubai (GST)</SelectItem>
+                        <SelectItem value="Europe/London">Europe/London (GMT)</SelectItem>
+                        <SelectItem value="America/New_York">America/New_York (EST)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="flex justify-end">
+                  <Button onClick={handleSave} disabled={isSaving} className="gap-2">
+                    {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    Save Changes
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Team Settings */}
+          <TabsContent value="team" className="space-y-6 mt-0">
+            <Card>
+              <CardHeader>
+                <CardTitle>Team Members</CardTitle>
+                <CardDescription>
+                  Manage who has access to this dashboard
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <TeamList />
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Notifications Settings */}
+          <TabsContent value="notifications" className="space-y-6 mt-0">
+            <Card>
+              <CardHeader>
+                <CardTitle>Email Notifications</CardTitle>
+                <CardDescription>
+                  Choose what emails you want to receive
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {[
+                  { id: 'notify_new_booking', label: 'New Booking', description: 'Get notified when a new booking is made' },
+                  { id: 'notify_cancellation', label: 'Cancellations', description: 'Get notified when a booking is cancelled' },
+                ].map((item) => (
+                  <div key={item.id} className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">{item.label}</p>
+                      <p className="text-sm text-muted-foreground">{item.description}</p>
+                    </div>
+                    <Switch
+                      checked={formData.settings[item.id] !== false}
+                      onCheckedChange={(checked) => handleUpdate('settings', item.id, checked)}
+                    />
+                  </div>
+                ))}
+                <div className="flex justify-end mt-4">
+                  <Button onClick={handleSave} disabled={isSaving} className="gap-2">
+                    {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    Save Preferences
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Promotions Settings */}
+          <TabsContent value="promos" className="space-y-6 mt-0">
+            <PromoManager />
+          </TabsContent>
+
+          {/* Branding Settings */}
+          <TabsContent value="branding" className="space-y-6 mt-0">
+            <Card>
+              <CardHeader>
+                <CardTitle>Booking Engine Branding</CardTitle>
+                <CardDescription>
+                  Customize how your booking engine looks to guests
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="primaryColor">Primary Color</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="primaryColor"
+                        type="color"
+                        className="w-12 h-10 p-1 cursor-pointer"
+                        value={formData.settings.primary_color || '#3B82F6'}
+                        onChange={(e) => handleUpdate('settings', 'primary_color', e.target.value)}
+                      />
+                      <Input
+                        value={formData.settings.primary_color || '#3B82F6'}
+                        onChange={(e) => handleUpdate('settings', 'primary_color', e.target.value)}
+                        placeholder="#3B82F6"
+                      />
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      This color will be used for buttons and highlights on your booking page.
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="logoUpload">Hotel Logo</Label>
+                    <div className="flex gap-4 items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
                           <Button
-                            variant="ghost"
+                            variant="outline"
                             size="sm"
-                            className="text-destructive h-8"
-                            onClick={() => handleUpdate('settings', 'logo_url', '')}
+                            className="relative"
+                            disabled={isSaving}
                           >
-                            Remove
+                            {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Upload className="h-4 w-4 mr-2" />}
+                            Upload New Logo
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="absolute inset-0 opacity-0 cursor-pointer"
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+
+                                try {
+                                  setIsSaving(true);
+                                  const formData = new FormData();
+                                  formData.append('file', file);
+
+                                  const response = await apiClient.post<{ url: string }>('/upload', formData);
+                                  handleUpdate('settings', 'logo_url', response.url);
+
+                                  toast({
+                                    title: "Logo Uploaded",
+                                    description: "Don't forget to click Save Branding to apply changes.",
+                                  });
+                                } catch (error) {
+                                  toast({
+                                    variant: "destructive",
+                                    title: "Upload Failed",
+                                    description: "Could not upload logo. Try a smaller file.",
+                                  });
+                                } finally {
+                                  setIsSaving(false);
+                                }
+                              }}
+                            />
                           </Button>
+                          {formData.settings.logo_url && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive h-8"
+                              onClick={() => handleUpdate('settings', 'logo_url', '')}
+                            >
+                              Remove
+                            </Button>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Recommended size: 200x200px. formats: PNG, JPG.
+                        </p>
+                      </div>
+
+                      <div className="h-20 w-20 border rounded-lg bg-slate-50 flex items-center justify-center overflow-hidden relative">
+                        {formData.settings.logo_url ? (
+                          <img
+                            src={formData.settings.logo_url}
+                            alt="Logo Preview"
+                            className="w-full h-full object-contain"
+                          />
+                        ) : (
+                          <span className="text-xs text-muted-foreground text-center px-1">No Logo</span>
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        Recommended size: 200x200px. formats: PNG, JPG.
-                      </p>
-                    </div>
-
-                    {/* Preview Box */}
-                    <div className="h-20 w-20 border rounded-lg bg-slate-50 flex items-center justify-center overflow-hidden relative">
-                      {formData.settings.logo_url ? (
-                        <img
-                          src={formData.settings.logo_url}
-                          alt="Logo Preview"
-                          className="w-full h-full object-contain"
-                        />
-                      ) : (
-                        <span className="text-xs text-muted-foreground text-center px-1">No Logo</span>
-                      )}
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="flex justify-end mt-4">
-                <Button onClick={handleSave} disabled={isSaving} className="gap-2">
-                  {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                  Save Branding
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                <div className="flex justify-end mt-4">
+                  <Button onClick={handleSave} disabled={isSaving} className="gap-2">
+                    {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    Save Branding
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Policies Settings */}
+          <TabsContent value="policies" className="space-y-6 mt-0">
+            <Card>
+              <CardHeader>
+                <CardTitle>Hotel Policies</CardTitle>
+                <CardDescription>
+                  Define your hotel's rules and terms for guests
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="cancellation_policy">Cancellation Policy</Label>
+                    <Textarea
+                      id="cancellation_policy"
+                      placeholder="e.g. Free cancellation up to 24 hours before arrival..."
+                      value={formData.settings.cancellation_policy}
+                      onChange={(e) => handleUpdate('settings', 'cancellation_policy', e.target.value)}
+                      className="min-h-[100px]"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="payment_policy">Payment Policy</Label>
+                    <Textarea
+                      id="payment_policy"
+                      placeholder="e.g. 50% deposit required at booking..."
+                      value={formData.settings.payment_policy}
+                      onChange={(e) => handleUpdate('settings', 'payment_policy', e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="child_policy">Child & Extra Bed Policy</Label>
+                    <Textarea
+                      id="child_policy"
+                      placeholder="e.g. Children under 5 stay for free..."
+                      value={formData.settings.child_policy}
+                      onChange={(e) => handleUpdate('settings', 'child_policy', e.target.value)}
+                    />
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-2">
+                    <Label htmlFor="privacy_policy">Privacy Policy</Label>
+                    <Textarea
+                      id="privacy_policy"
+                      placeholder="How you handle guest data..."
+                      value={formData.settings.privacy_policy}
+                      onChange={(e) => handleUpdate('settings', 'privacy_policy', e.target.value)}
+                      className="min-h-[150px]"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="important_info">Important Information</Label>
+                    <Textarea
+                      id="important_info"
+                      placeholder="e.g. Construction nearby, parking rules..."
+                      value={formData.settings.important_info}
+                      onChange={(e) => handleUpdate('settings', 'important_info', e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end mt-6">
+                  <Button onClick={handleSave} disabled={isSaving} className="gap-2">
+                    {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    Save Policies
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </div>
       </Tabs>
     </div>
   );

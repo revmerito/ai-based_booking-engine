@@ -289,54 +289,78 @@ export function RoomDialog({ open, onOpenChange, onSuccess, initialData }: RoomD
 
                         {/* Amenities Selection */}
                         <div className="space-y-4">
-                            <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Room Amenities</h3>
+                            <div className="flex items-center justify-between border-b pb-2">
+                                <h3 className="text-sm font-medium text-muted-foreground">Room Amenities</h3>
+                                <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    className="h-7 text-[10px] uppercase font-bold text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                    onClick={() => window.open('/amenities', '_blank')}
+                                >
+                                    Manage Library
+                                </Button>
+                            </div>
                             <FormField
                                 control={form.control}
                                 name="amenity_ids"
                                 render={() => (
                                     <FormItem>
                                         <div className="mb-4">
-                                            <FormLabel className="text-base">Select Amenities</FormLabel>
-                                            <DialogDescription>
-                                                Choose features available in this room type.
+                                            <FormLabel className="text-base font-bold">Select Room Features</FormLabel>
+                                            <DialogDescription className="text-xs">
+                                                Choose which amenities are available specifically for this room type.
                                             </DialogDescription>
                                         </div>
-                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                            {availableAmenities.map((amenity) => (
-                                                <FormField
-                                                    key={amenity.id}
-                                                    control={form.control}
-                                                    name="amenity_ids"
-                                                    render={({ field }) => {
-                                                        return (
-                                                            <FormItem
-                                                                key={amenity.id}
-                                                                className="flex flex-row items-start space-x-3 space-y-0"
-                                                            >
-                                                                <FormControl>
-                                                                    <Checkbox
-                                                                        checked={field.value?.includes(amenity.id)}
-                                                                        onCheckedChange={(checked) => {
-                                                                            return checked
-                                                                                ? field.onChange([...field.value, amenity.id])
-                                                                                : field.onChange(
-                                                                                    field.value?.filter(
-                                                                                        (value) => value !== amenity.id
+                                        {availableAmenities.filter(a => a.scope === 'room').length > 0 ? (
+                                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                                {availableAmenities.filter(a => a.scope === 'room').map((amenity) => (
+                                                    <FormField
+                                                        key={amenity.id}
+                                                        control={form.control}
+                                                        name="amenity_ids"
+                                                        render={({ field }) => {
+                                                            return (
+                                                                <FormItem
+                                                                    key={amenity.id}
+                                                                    className="flex flex-row items-start space-x-3 space-y-0 p-2 rounded-lg border border-transparent hover:border-slate-100 hover:bg-slate-50 transition-all"
+                                                                >
+                                                                    <FormControl>
+                                                                        <Checkbox
+                                                                            checked={field.value?.includes(amenity.id)}
+                                                                            onCheckedChange={(checked) => {
+                                                                                return checked
+                                                                                    ? field.onChange([...field.value, amenity.id])
+                                                                                    : field.onChange(
+                                                                                        field.value?.filter(
+                                                                                            (value) => value !== amenity.id
+                                                                                        )
                                                                                     )
-                                                                                )
-                                                                        }}
-                                                                    />
-                                                                </FormControl>
-                                                                <FormLabel className="font-normal text-sm cursor-pointer">
-                                                                    {amenity.name}
-                                                                    {amenity.is_featured && <Badge variant="outline" className="ml-2 text-[10px] h-4">Featured</Badge>}
-                                                                </FormLabel>
-                                                            </FormItem>
-                                                        )
-                                                    }}
-                                                />
-                                            ))}
-                                        </div>
+                                                                            }}
+                                                                        />
+                                                                    </FormControl>
+                                                                    <FormLabel className="font-medium text-sm cursor-pointer flex items-center gap-2">
+                                                                        {amenity.name}
+                                                                        {amenity.is_featured && <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border-emerald-100 text-[8px] h-3.5 uppercase px-1">Featured</Badge>}
+                                                                    </FormLabel>
+                                                                </FormItem>
+                                                            )
+                                                        }}
+                                                    />
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="text-center py-6 border-2 border-dashed rounded-xl bg-slate-50/50">
+                                                <p className="text-sm text-slate-500 mb-3">No room-level amenities found.</p>
+                                                <Button 
+                                                    type="button"
+                                                    variant="outline" 
+                                                    size="sm"
+                                                    onClick={() => window.location.href = '/amenities'}
+                                                >
+                                                    Go to Amenities Manager
+                                                </Button>
+                                            </div>
+                                        )}
                                         <FormMessage />
                                     </FormItem>
                                 )}

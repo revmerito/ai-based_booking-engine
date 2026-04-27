@@ -83,6 +83,8 @@ export interface HotelSettings {
   cancellation_policy?: string;
   payment_policy?: string;
   child_policy?: string;
+  privacy_policy?: string;
+  important_info?: string;
   notify_new_booking?: boolean;
   notify_cancellation?: boolean;
 }
@@ -124,6 +126,8 @@ export interface Amenity {
   name: string;
   icon_slug: string;
   category: string;
+  scope: 'room' | 'hotel';
+  description?: string;
   is_featured: boolean;
 }
 

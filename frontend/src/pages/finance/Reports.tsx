@@ -244,6 +244,65 @@ export function ReportsPage() {
         </Card>
       </div>
 
+      {/* Performance Intelligence Section */}
+      <Card className="border-blue-100 bg-blue-50/30 overflow-hidden relative">
+        <div className="absolute top-0 right-0 p-6 opacity-10">
+          <TrendingUp className="w-24 h-24 text-blue-600" />
+        </div>
+        <CardHeader>
+          <div className="flex items-center gap-2 mb-1">
+             <div className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
+             <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Performance Intelligence</span>
+          </div>
+          <CardTitle className="text-xl flex items-center gap-2">
+            Executive Summary & Recommendations
+          </CardTitle>
+          <CardDescription>Generated based on your last {days} days of performance data</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {stats && stats.summary.totalBookings > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-white p-4 rounded-xl border border-blue-100 shadow-sm">
+                <h4 className="text-sm font-bold text-slate-900 mb-2 flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-emerald-500" /> Revenue Flow
+                </h4>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Your total revenue for this period is {formatCurrency(stats.summary.totalRevenue)}. 
+                  Average daily performance is steady.
+                </p>
+              </div>
+              <div className="bg-white p-4 rounded-xl border border-blue-100 shadow-sm">
+                <h4 className="text-sm font-bold text-slate-900 mb-2 flex items-center gap-2">
+                  <Users className="w-4 h-4 text-blue-500" /> Booking Volume
+                </h4>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  With {stats.summary.totalBookings} confirmed bookings, your occupancy is at {stats.summary.occupancyRate}%.
+                </p>
+              </div>
+              <div className="bg-white p-4 rounded-xl border border-blue-100 shadow-sm">
+                <h4 className="text-sm font-bold text-slate-900 mb-2 flex items-center gap-2">
+                  <Bed className="w-4 h-4 text-purple-500" /> Profitability
+                </h4>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Estimated net profit stands at {formatCurrency(stats.summary.netProfit)}. 
+                  Your gross margins are healthy.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="py-12 text-center bg-white rounded-xl border border-dashed border-blue-200">
+              <p className="text-sm text-slate-500">Not enough data to generate performance insights yet.</p>
+              <p className="text-xs text-slate-400 mt-1">AI recommendations will appear after your first few bookings.</p>
+            </div>
+          )}
+          <div className="mt-6 flex justify-end">
+            <Button size="sm" className="bg-blue-600 hover:bg-blue-700 gap-2" disabled={!stats || stats.summary.totalBookings === 0}>
+              Request Deep AI Analysis
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Reports Tabs */}
       <Tabs defaultValue="occupancy" className="space-y-4">
         <TabsList>

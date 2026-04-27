@@ -21,6 +21,7 @@ if sys.platform == 'win32':
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GzipMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.core.config import get_settings
@@ -28,7 +29,7 @@ from app.core.database import init_db
 from app.core.limiter import limiter, _rate_limit_exceeded_handler, RateLimitExceeded
 
 # Import routers
-from app.api.v1 import auth, users, hotels, rooms, bookings, dashboard, rates, payments, availability, reports, public, integration, upload, addons, channel_manager, amenities, properties, competitors, admin, agent, promos, notifications
+from app.api.v1 import auth, users, hotels, rooms, bookings, dashboard, rates, payments, availability, reports, public, integration, upload, addons, channel_manager, amenities, properties, competitors, admin, agent, promos, notifications, analytics
 
 
 
@@ -73,6 +74,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(GzipMiddleware, minimum_size=1000)
 
 
 
@@ -108,6 +110,7 @@ app.include_router(admin.router, prefix=API_V1_PREFIX)
 app.include_router(agent.router, prefix=API_V1_PREFIX, tags=["AI Agent"])
 app.include_router(promos.router, prefix=API_V1_PREFIX + "/promos", tags=["Promos"])
 app.include_router(notifications.router, prefix=API_V1_PREFIX, tags=["Notifications"])
+app.include_router(analytics.router, prefix=API_V1_PREFIX + "/analytics", tags=["Analytics"])
 
 
 # DEV ONLY: Mock external API router (never in production)

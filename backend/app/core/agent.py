@@ -8,7 +8,7 @@ from langchain_core.tools import tool
 from langchain_core.messages import SystemMessage
 
 from app.core.config import get_settings
-from app.models.booking import Booking, BookingStatus, BookingSource
+from app.models.booking import Booking, BookingStatus, BookingSource, Guest, BookingTimeline
 from app.models.room import RoomType
 from app.models.user import User
 from app.models.competitor import Competitor, CompetitorRate
@@ -438,6 +438,125 @@ def create_agent_executor(session: AsyncSession, user: User):
         return summary
 
     @tool
+    async def create_quick_booking(guest_name: str, guest_email: str, room_type_name: str, check_in_str: str, nights: int = 1) -> str:
+        """
+        Creates a quick booking for a guest.
+        Format dates as YYYY-MM-DD.
+        Example: "Book a Deluxe room for Amit (amit@email.com) for 2 nights starting 2026-05-10"
+        """
+        try:
+            from datetime import date, timedelta, datetime
+            import uuid
+            start_date = date.fromisoformat(check_in_str)
+            end_date = start_date + timedelta(days=nights)
+            
+            # 1. Find Room Type
+            rt_res = await session.execute(select(RoomType).where(
+                RoomType.hotel_id == user.hotel_id,
+                RoomType.name.ilike(f"%{room_type_name}%")
+            ))
+            room_type = rt_res.scalars().first()
+            if not room_type:
+                return f"Error: Room type '{room_type_name}' not found."
+            
+            # 2. Find/Create Guest
+            guest_res = await session.execute(select(Guest).where(
+                Guest.email == guest_email,
+                Guest.hotel_id == user.hotel_id
+            ))
+            guest = guest_res.scalar_one_or_none()
+            if not guest:
+                names = guest_name.split(" ")
+                guest = Guest(
+                    first_name=names[0],
+                    last_name=names[1] if len(names) > 1 else "",
+                    email=guest_email,
+                    hotel_id=user.hotel_id
+                )
+                session.add(guest)
+                await session.flush()
+            
+            # 3. Create Booking
+            booking_num = f"AI{datetime.utcnow().strftime('%y%m%d')}{str(uuid.uuid4())[:4].upper()}"
+            new_booking = Booking(
+                hotel_id=user.hotel_id,
+                guest_id=guest.id,
+                booking_number=booking_num,
+                check_in=start_date,
+                check_out=end_date,
+                rooms=[{
+                    "room_type_id": room_type.id,
+                    "room_type_name": room_type.name,
+                    "price_per_night": room_type.base_price,
+                    "total_price": room_type.base_price * nights
+                }],
+                total_amount=room_type.base_price * nights,
+                status=BookingStatus.PENDING,
+                source=BookingSource.BOOKING_ENGINE
+            )
+            session.add(new_booking)
+            await session.flush()
+            
+            # 4. Log to Timeline
+            timeline = BookingTimeline(
+                booking_id=new_booking.id,
+                event_type="booking_created",
+                message=f"Autonomous booking created by AI Agent for {guest_name}",
+                changed_by="ai_agent"
+            )
+            session.add(timeline)
+            
+            await session.commit()
+            return f"✅ Booking Created Successfully! Number: **{booking_num}**. Status: Pending Approval."
+            
+        except Exception as e:
+            return f"❌ Failed to create booking: {str(e)}"
+
+    @tool
+    async def check_availability_matrix(start_date_str: str, end_date_str: str) -> str:
+        """
+        Check which room types are available for a date range.
+        Shows Total Inventory vs Booked count for each room type.
+        """
+        try:
+            from datetime import date
+            s_date = date.fromisoformat(start_date_str)
+            e_date = date.fromisoformat(end_date_str)
+            
+            # Get all room types
+            rt_res = await session.execute(select(RoomType).where(RoomType.hotel_id == user.hotel_id))
+            room_types = rt_res.scalars().all()
+            
+            # Get all active bookings in range
+            b_res = await session.execute(select(Booking).where(
+                Booking.hotel_id == user.hotel_id,
+                Booking.status != BookingStatus.CANCELLED,
+                and_(
+                    Booking.check_in < e_date,
+                    Booking.check_out > s_date
+                )
+            ))
+            bookings = b_res.scalars().all()
+            
+            summary = f"📅 **Availability Matrix ({start_date_str} to {end_date_str}):**\n"
+            for rt in room_types:
+                # Calculate occupied
+                occupied = 0
+                for b in bookings:
+                    for r in b.rooms:
+                        if r.get("room_type_id") == rt.id:
+                            occupied += 1
+                
+                avail = rt.total_inventory - occupied
+                status = "✅ Available" if avail > 0 else "❌ Sold Out"
+                summary += f"- **{rt.name}**: {avail}/{rt.total_inventory} left. {status}\n"
+                
+            return summary
+        except Exception as e:
+            return f"Error checking availability: {str(e)}"
+
+
+    @tool
     async def search_web(query: str) -> str:
         """
         Search the web for real-time information (Events, Weather, Trends).
@@ -476,7 +595,9 @@ def create_agent_executor(session: AsyncSession, user: User):
         find_guest,
         block_room_dates,
         get_pending_approvals,
-        search_web
+        search_web,
+        create_quick_booking,
+        check_availability_matrix
     ]
 
     llm = ChatOllama(

@@ -32,7 +32,9 @@ class Settings(BaseSettings):
         "http://localhost:8080",
         "https://staybooker.ai",
         "https://www.staybooker.ai",
-        "https://api.staybooker.ai"
+        "https://api.staybooker.ai",
+        "https://staybooker.railway.app",
+        "https://staybooker-production.up.railway.app"
     ]
 
     @field_validator("DATABASE_URL", mode="before")
@@ -70,6 +72,12 @@ class Settings(BaseSettings):
     # AI Config
     OPENAI_API_KEY: str | None = None
     OLLAMA_API_KEY: str | None = None
+
+    # Redis Configuration (Support for Railway REDIS_URL)
+    REDIS_URL: Optional[str] = None
+    REDIS_HOST: str = "localhost"
+    REDIS_PORT: int = 6379
+    REDIS_PASSWORD: Optional[str] = None
 
     class Config:
         env_file = ".env"

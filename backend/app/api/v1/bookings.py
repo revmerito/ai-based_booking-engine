@@ -12,8 +12,9 @@ import uuid
 from app.api.deps import CurrentUser, DbSession
 from app.models.booking import (
     Booking, BookingCreate, BookingRead, BookingUpdate,
-    Guest, GuestCreate, GuestRead, BookingStatus
+    Guest, GuestCreate, GuestRead, BookingStatus, BookingTimeline
 )
+from app.models.room import RoomType
 
 router = APIRouter(prefix="/bookings", tags=["Bookings"])
 
@@ -92,6 +93,20 @@ async def create_booking(
         await session.flush()
     
     # Create booking
+    # --- CONCURRENCY SAFETY: Lock room inventory during transaction ---
+    for room_req in booking_data.rooms:
+        rt_id = room_req.get("room_type_id")
+        # Lock this room type for the duration of this transaction
+        rt_query = select(RoomType).where(RoomType.id == rt_id).with_for_update()
+        rt_result = await session.execute(rt_query)
+        room_type = rt_result.scalar_one_or_none()
+        
+        if not room_type:
+             raise HTTPException(status_code=404, detail=f"Room type {rt_id} not found")
+             
+        # TODO: Advanced date-range availability check goes here.
+        # For now, we ensure the room type exists and is locked.
+
     booking = Booking(
         hotel_id=current_user.hotel_id,
         guest_id=guest.id,
@@ -105,6 +120,18 @@ async def create_booking(
         status=BookingStatus.PENDING
     )
     session.add(booking)
+    await session.flush() # Get booking ID
+    
+    # Log to Timeline
+    timeline = BookingTimeline(
+        booking_id=booking.id,
+        event_type="booking_created",
+        new_value=BookingStatus.PENDING,
+        message=f"New booking created via {booking.source}",
+        changed_by=str(current_user.id)
+    )
+    session.add(timeline)
+    
     await session.commit()
     await session.refresh(booking)
     await session.refresh(guest)
@@ -197,10 +224,25 @@ async def update_booking(
             detail="Booking not found"
         )
     
+    old_status = booking.status
     update_data = booking_update.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(booking, field, value)
     
+    new_status = booking.status
+    
+    # Log to timeline if status changed
+    if old_status != new_status:
+        timeline = BookingTimeline(
+            booking_id=booking.id,
+            event_type="status_change",
+            old_value=old_status,
+            new_value=new_status,
+            message=f"Booking status updated from {old_status} to {new_status}",
+            changed_by=str(current_user.id)
+        )
+        session.add(timeline)
+        
     booking.updated_at = datetime.utcnow()
     session.add(booking)
     await session.commit()

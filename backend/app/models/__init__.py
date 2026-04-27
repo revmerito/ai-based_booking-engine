@@ -1,6 +1,7 @@
 # Database Models
 from app.models.user import User, UserRole
 from app.models.hotel import Hotel, HotelSettings
+from app.models.analytics import AnalyticsSession, AnalyticsEvent
 from app.models.room import RoomType, RoomPhoto, Amenity
 from app.models.booking import Booking, BookingRoom, Guest
 from app.models.payment import Payment
@@ -10,6 +11,7 @@ from app.models.promo import PromoCode
 from app.models.addon import AddOn
 from app.models.notification import Notification
 from app.models.subscription import Subscription
+from app.models.timeline import BookingTimeline
 
 __all__ = [
     "User", "UserRole",
@@ -22,5 +24,6 @@ __all__ = [
     "PromoCode",
     "AddOn",
     "Notification",
-    "Subscription"
+    "Subscription",
+    "BookingTimeline"
 ]

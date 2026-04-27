@@ -54,11 +54,14 @@ async def seed_defaults(current_user: CurrentUser, session: DbSession):
         return {"message": "Amenities already exist"}
         
     defaults = [
-        {"name": "Free WiFi", "icon_slug": "wifi", "category": "tech", "is_featured": True},
-        {"name": "Air Conditioning", "icon_slug": "snowflake", "category": "comfort", "is_featured": True},
-        {"name": "Smart TV", "icon_slug": "tv", "category": "tech", "is_featured": True},
-        {"name": "Breakfast Included", "icon_slug": "coffee", "category": "dining", "is_featured": True},
-        {"name": "Swimming Pool", "icon_slug": "waves", "category": "wellness", "is_featured": False},
+        {"name": "Free WiFi", "icon_slug": "wifi", "category": "tech", "scope": "room", "is_featured": True},
+        {"name": "Air Conditioning", "icon_slug": "snowflake", "category": "comfort", "scope": "room", "is_featured": True},
+        {"name": "Smart TV", "icon_slug": "tv", "category": "tech", "scope": "room", "is_featured": True},
+        {"name": "Coffee Maker", "icon_slug": "coffee", "category": "dining", "scope": "room", "is_featured": False},
+        {"name": "Mini Bar", "icon_slug": "utensils", "category": "dining", "scope": "room", "is_featured": False},
+        {"name": "Swimming Pool", "icon_slug": "waves", "category": "wellness", "scope": "hotel", "is_featured": False},
+        {"name": "Gym / Fitness", "icon_slug": "dumbbell", "category": "wellness", "scope": "hotel", "is_featured": False},
+        {"name": "Parking Area", "icon_slug": "car", "category": "general", "scope": "hotel", "is_featured": False},
     ]
     
     created = []
