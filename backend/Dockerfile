@@ -29,7 +29,7 @@ COPY . .
 CMD gunicorn main:app \
     -w 2 \
     -k uvicorn.workers.UvicornWorker \
-    --bind 0.0.0.0:${PORT:-8001} \
+    --bind 0.0.0.0:${PORT:-8080} \
     --timeout 120 \
     --keepalive 5 \
     --max-requests 500 \
