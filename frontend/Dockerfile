@@ -1,4 +1,4 @@
-# Frontend Dockerfile - React + Vite + Node 18
+# Frontend Dockerfile - React + Vite Production Build
 FROM node:18-alpine
 
 WORKDIR /app
@@ -10,8 +10,13 @@ RUN npm install
 # Copy application code
 COPY . .
 
-# Expose Vite dev server port (matches vite.config.ts)
+# Build production bundle
+# VITE_API_URL must be set as Railway environment variable
+RUN npm run build
+
+# Serve the static build with a lightweight server
+RUN npm install -g serve
+
 EXPOSE 8080
 
-# Run Vite dev server with host binding for Docker
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+CMD ["serve", "-s", "dist", "-l", "8080"]
