@@ -413,3 +413,5 @@ const StatCard: React.FC<{
     </div>
   </div>
 );
+
+export default AnalyticsDashboard;

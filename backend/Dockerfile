@@ -23,4 +23,14 @@ COPY . .
 # EXPOSE 8001
 
 # Default command using gunicorn with uvicorn workers for production stability
-CMD gunicorn main:app -w 1 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:${PORT:-8001} --timeout 120
+# -w 2: 2 workers handles concurrent requests (Railway has 512MB+ RAM)
+# --keepalive 5: Reuse connections (critical for Railway's proxy)
+# --max-requests 500: Restart workers to prevent memory leaks
+CMD gunicorn main:app \
+    -w 2 \
+    -k uvicorn.workers.UvicornWorker \
+    --bind 0.0.0.0:${PORT:-8001} \
+    --timeout 120 \
+    --keepalive 5 \
+    --max-requests 500 \
+    --access-logfile -

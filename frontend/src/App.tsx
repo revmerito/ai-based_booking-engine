@@ -33,7 +33,7 @@ const RatesShopper = lazy(() => import("@/pages/marketing/RatesShopper"));
 const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
 const AgentPage = lazy(() => import("@/pages/agent/AgentPage"));
 const ProfilePage = lazy(() => import("@/pages/settings/Profile"));
-const AnalyticsDashboard = lazy(() => import("@/pages/AnalyticsDashboard").then(m => ({ default: m.AnalyticsDashboard })));
+const AnalyticsDashboard = lazy(() => import("@/pages/AnalyticsDashboard"));
 
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
@@ -54,7 +54,16 @@ const PageLoader = () => (
   </div>
 );
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 2,     // Cache data for 2 minutes
+      gcTime: 1000 * 60 * 10,       // Keep in memory for 10 minutes
+      retry: 1,                      // Fail fast (1 retry only)
+      refetchOnWindowFocus: false,   // Don't re-fetch on every tab switch
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

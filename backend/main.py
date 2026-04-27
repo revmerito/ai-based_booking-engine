@@ -85,6 +85,30 @@ async def health_check():
     return {"status": "healthy", "version": settings.APP_VERSION}
 
 
+# Cache-Control middleware for performance
+@app.middleware("http")
+async def add_cache_headers(request: Request, call_next):
+    response = await call_next(request)
+    path = request.url.path
+
+    # Cacheable read-only endpoints (60 seconds)
+    cacheable_prefixes = [
+        "/api/v1/dashboard",
+        "/api/v1/rooms",
+        "/api/v1/reports",
+        "/api/v1/analytics",
+        "/api/v1/amenities",
+    ]
+    is_cacheable = any(path.startswith(p) for p in cacheable_prefixes)
+
+    if request.method == "GET" and is_cacheable and response.status_code == 200:
+        response.headers["Cache-Control"] = "private, max-age=60"
+    elif path.startswith("/api/v1/auth") or path.startswith("/api/v1/users"):
+        response.headers["Cache-Control"] = "no-store"
+
+    return response
+
+
 # API Version 1 routers include karo
 API_V1_PREFIX = "/api/v1"
 
