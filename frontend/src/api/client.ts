@@ -8,8 +8,8 @@ const getBaseUrl = () => {
   if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
   
   const hostname = window.location.hostname;
-  if (hostname === 'staybooker.ai' || hostname === 'www.staybooker.ai') {
-    return 'https://api.staybooker.ai/api/v1';
+  if (hostname === 'staybooker.ai' || hostname === 'www.staybooker.ai' || hostname.includes('railway.app')) {
+    return 'https://ai-basedbooking-engine-production.up.railway.app/api/v1';
   }
   
   // Local development fallback
