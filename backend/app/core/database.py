@@ -13,7 +13,9 @@ settings = get_settings()
 
 # Supabase/PgBouncer Compatibility Configuration
 connect_args = {
-    "statement_cache_size": 0
+    "prepared_statement_cache_size": 0,
+    "statement_cache_size": 0,
+    "server_settings": {"jit": "off"}
 }
 
 engine_args = {

@@ -1,5 +1,5 @@
-# Backend Dockerfile - FastAPI + Python 3.13
-FROM python:3.13-slim
+# Backend Dockerfile - FastAPI + Python 3.11
+FROM python:3.11-slim
 
 WORKDIR /app
 
@@ -19,8 +19,8 @@ RUN pip install --no-cache-dir redis
 # Copy application code
 COPY . .
 
-# Expose port
-EXPOSE 8001
+# Expose port (Optional, Railway overrides this)
+# EXPOSE 8001
 
-# Default command (uses Railway's $PORT or 8001)
-CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-8001}
+# Default command using gunicorn with uvicorn workers for production stability
+CMD gunicorn main:app -w 1 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:${PORT:-8001} --timeout 120
