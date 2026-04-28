@@ -1,5 +1,4 @@
 // Dashboard Home Page - Real API Integration
-import { useState, useEffect } from 'react';
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -14,6 +13,7 @@ import {
   MoreHorizontal
 } from 'lucide-react';
 import { motion, Variants } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiClient } from '@/api/client';
@@ -54,52 +54,46 @@ const itemVariants: Variants = {
     transition: {
       type: "spring",
       stiffness: 100,
-      damping: 15 // Smooth spring
+      damping: 15
     }
   }
 };
 
 export function DashboardPage() {
   const { hotel, user } = useAuth();
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [recentBookings, setRecentBookings] = useState<RecentBooking[]>([]);
-  const [rateAnalysis, setRateAnalysis] = useState<any | null>(null); // For Widget
-  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
+  // 1. Fetch Stats
+  const { data: stats, isLoading: isStatsLoading } = useQuery<DashboardStats>({
+    queryKey: ['dashboardStats'],
+    queryFn: () => apiClient.get<DashboardStats>('/dashboard/stats'),
+    staleTime: 60000, // 1 minute stale time (no spamming requests)
+    refetchOnWindowFocus: false
+  });
+
+  // 2. Fetch Recent Bookings
+  const { data: recentBookings = [] } = useQuery<RecentBooking[]>({
+    queryKey: ['recentBookings'],
+    queryFn: () => apiClient.get<RecentBooking[]>('/dashboard/recent-bookings'),
+    staleTime: 60000,
+    refetchOnWindowFocus: false
+  });
+
+  // 3. Fetch AI Analysis Summary
+  const { data: rateAnalysis = null } = useQuery<any | null>({
+    queryKey: ['competitorAnalysis'],
+    queryFn: async () => {
       try {
-        setIsLoading(true);
-
-        // Fetch stats
-        const statsData = await apiClient.get<DashboardStats>('/dashboard/stats');
-        setStats(statsData);
-
-        // Fetch recent bookings
-        try {
-          const bookingsData = await apiClient.get<RecentBooking[]>('/dashboard/recent-bookings');
-          setRecentBookings(bookingsData);
-        } catch {
-          // Silently fail - bookings are optional
-        }
-
-        // Fetch AI Analysis Summary
-        try {
-          const analysisData = await apiClient.get<any[]>('/competitors/analysis', { days: '1' });
-          if (analysisData.length > 0) setRateAnalysis(analysisData[0]);
-        } catch {
-          // Silently fail - analysis is optional
-        }
-
+        const res = await apiClient.get<any[]>('/competitors/analysis', { days: '1' });
+        return res.length > 0 ? res[0] : null;
       } catch {
-        // Dashboard stats fetch failed - will show empty state
-      } finally {
-        setIsLoading(false);
+        return null;
       }
-    };
+    },
+    staleTime: 300000, // 5 mins
+    refetchOnWindowFocus: false
+  });
 
-    fetchDashboardData();
-  }, []);
+  const isLoading = isStatsLoading;
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
