@@ -44,8 +44,13 @@ async def lifespan(app: FastAPI):
     """
     # Startup: Database initialize karo
     logger.info("Starting Hotelier Hub API...")
-    await init_db()
-    logger.info("Database initialized successfully!")
+    try:
+        await init_db()
+        logger.info("Database initialized successfully!")
+    except Exception as e:
+        logger.error(f"CRITICAL: Database connection failed during startup: {e}")
+        # We don't re-raise here so the app can at least boot and serve /health
+        # If it crashes here, Railway gives 502 Bad Gateway.
     yield
     # Shutdown: Cleanup if needed
     logger.info("Shutting down...")
