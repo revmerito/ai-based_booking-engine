@@ -5,7 +5,7 @@ Bookings page ke liye.
 """
 from typing import List, Optional
 from datetime import datetime
-from fastapi import APIRouter, HTTPException, status, Query
+from fastapi import APIRouter, HTTPException, status, Query, BackgroundTasks
 from sqlmodel import select
 import uuid
 
@@ -16,6 +16,7 @@ from app.models.booking import (
     Guest, GuestCreate, GuestRead, BookingStatus,
 )
 from app.models.room import RoomType
+from app.core.tasks import log_timeline_task
 
 router = APIRouter(prefix="/bookings", tags=["Bookings"])
 
@@ -74,7 +75,8 @@ async def get_bookings(
 async def create_booking(
     booking_data: BookingCreate,
     current_user: CurrentUser,
-    session: DbSession
+    session: DbSession,
+    background_tasks: BackgroundTasks
 ):
     """
     New booking create karo.
@@ -130,15 +132,16 @@ async def create_booking(
     session.add(booking)
     await session.flush() # Get booking ID
     
-    # Log to Timeline
-    timeline = BookingTimeline(
+    # Log to Timeline in background
+    background_tasks.add_task(
+        log_timeline_task,
         booking_id=booking.id,
         event_type="booking_created",
+        old_value=None,
         new_value=BookingStatus.PENDING,
         message=f"New booking created via {booking.source}",
         changed_by=str(current_user.id)
     )
-    session.add(timeline)
     
     await session.commit()
     await session.refresh(booking)
@@ -215,7 +218,8 @@ async def update_booking(
     booking_id: str,
     booking_update: BookingUpdate,
     current_user: CurrentUser,
-    session: DbSession
+    session: DbSession,
+    background_tasks: BackgroundTasks
 ):
     """Booking status/details update karo"""
     result = await session.execute(
@@ -239,9 +243,10 @@ async def update_booking(
     
     new_status = booking.status
     
-    # Log to timeline if status changed
+    # Log to timeline in background if status changed
     if old_status != new_status:
-        timeline = BookingTimeline(
+        background_tasks.add_task(
+            log_timeline_task,
             booking_id=booking.id,
             event_type="status_change",
             old_value=old_status,
@@ -249,7 +254,6 @@ async def update_booking(
             message=f"Booking status updated from {old_status} to {new_status}",
             changed_by=str(current_user.id)
         )
-        session.add(timeline)
         
     booking.updated_at = datetime.utcnow()
     session.add(booking)
