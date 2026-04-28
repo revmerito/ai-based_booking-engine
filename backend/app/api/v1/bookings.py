@@ -49,13 +49,20 @@ async def get_bookings(
     result = await session.execute(query)
     bookings = result.scalars().all()
     
-    # Guest data attach karo
+    # 1. Collect unique Guest IDs
+    guest_ids = [b.guest_id for b in bookings if b.guest_id]
+    guests_map = {}
+    
+    if guest_ids:
+        # 2. Batch fetch all guests in one single query
+        guest_query = select(Guest).where(Guest.id.in_(guest_ids))
+        guest_res = await session.execute(guest_query)
+        guests_map = {g.id: g for g in guest_res.scalars().all()}
+    
+    # 3. Attach guest data
     booking_responses = []
     for booking in bookings:
-        guest_result = await session.execute(
-            select(Guest).where(Guest.id == booking.guest_id)
-        )
-        guest = guest_result.scalar_one_or_none()
+        guest = guests_map.get(booking.guest_id)
         booking_dict = booking.model_dump()
         booking_dict["guest"] = guest.model_dump() if guest else {}
         booking_responses.append(booking_dict)
