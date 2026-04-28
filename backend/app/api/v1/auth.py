@@ -56,7 +56,19 @@ async def complete_onboarding(
     """
     try:
         if current_user.hotel_id:
-            raise HTTPException(status_code=400, detail="User already has a hotel linked")
+            # Update existing hotel name rather than crashing
+            result = await session.execute(select(Hotel).where(Hotel.id == current_user.hotel_id))
+            hotel = result.scalar_one_or_none()
+            if hotel:
+                hotel.name = hotel_data.hotel_name
+                session.add(hotel)
+                await session.commit()
+                await session.refresh(current_user)
+                return {
+                    "message": "Onboarding updated successfully",
+                    "user": UserRead.model_validate(current_user).model_dump(),
+                    "hotel": hotel
+                }
         
         # 1. Create Hotel
         hotel_slug = generate_slug(hotel_data.hotel_name)

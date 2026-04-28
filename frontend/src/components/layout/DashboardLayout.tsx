@@ -46,10 +46,6 @@ export function DashboardLayout() {
     return <Navigate to="/login" replace />;
   }
 
-  // Industry Standard: Agar user logged-in hai par hotel nahi hai, to onboarding pe bhejo
-  if (user && !user.hotel_id) {
-    return <Navigate to="/onboarding" replace />;
-  }
 
 
   return (
