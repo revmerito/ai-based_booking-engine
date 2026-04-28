@@ -43,7 +43,7 @@ async def lifespan(app: FastAPI):
     Database tables create hote hain startup par.
     """
     # Startup: Database initialize karo
-    logger.info("Starting Hotelier Hub API...")
+    logger.info("Starting Staybooker API...")
     try:
         await init_db()
         logger.info("Database initialized successfully!")
@@ -150,7 +150,7 @@ app.include_router(analytics.router, prefix=API_V1_PREFIX + "/analytics", tags=[
 async def root():
     """API root - basic info"""
     return {
-        "message": "Welcome to Hotelier Hub API",
+        "message": "Welcome to Staybooker API",
         "docs": "/docs",
         "version": settings.APP_VERSION
     }

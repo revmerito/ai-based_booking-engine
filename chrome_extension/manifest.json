@@ -1,8 +1,8 @@
 {
     "manifest_version": 3,
-    "name": "Hotelier Hub Companion",
+    "name": "Staybooker Companion",
     "version": "2.2",
-    "description": "Secure Distributed Rate Scraping Client for Hotelier Hub",
+    "description": "Secure Distributed Rate Scraping Client for Staybooker",
     "permissions": [
         "activeTab",
         "scripting",

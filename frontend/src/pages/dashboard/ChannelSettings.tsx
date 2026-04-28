@@ -175,7 +175,7 @@ export default function ChannelSettings() {
                         Connectivity Gateway
                     </CardTitle>
                     <CardDescription>
-                        We use a secure gateway to bridge your Hotelier Hub data with external channels.
+                        We use a secure gateway to bridge your Staybooker data with external channels.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="flex items-center justify-between">
@@ -263,7 +263,7 @@ export default function ChannelSettings() {
                             </CardHeader>
                             <CardContent className="space-y-4 text-sm">
                                 <ol className="list-decimal list-inside space-y-2 text-slate-700">
-                                    <li>Log in to your <strong>Hotelier Hub</strong> (this page).</li>
+                                    <li>Log in to your <strong>Staybooker</strong> (this page).</li>
                                     <li>Click the button below to authorize.</li>
                                     <li>You will be redirected to Airbnb to approve access.</li>
                                     <li>Map your listings after approval.</li>
@@ -293,7 +293,7 @@ export default function ChannelSettings() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="w-[300px]">Your Room (Hotelier Hub)</TableHead>
+                                    <TableHead className="w-[300px]">Your Room (Staybooker)</TableHead>
                                     <TableHead className="w-[50px]"><ArrowRightLeft className="w-4 h-4 text-slate-400" /></TableHead>
                                     <TableHead>Channel Room ID (OTA)</TableHead>
                                     <TableHead className="text-right">Action</TableHead>
@@ -375,7 +375,7 @@ export default function ChannelSettings() {
                         <CardHeader>
                             <CardTitle className="text-xl">Channel Manager Integration Guide</CardTitle>
                             <CardDescription>
-                                Step-by-step instructions to connect your Hotelier Hub with OTAs via Channex.
+                                Step-by-step instructions to connect your Staybooker with OTAs via Channex.
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
@@ -384,7 +384,7 @@ export default function ChannelSettings() {
                             <div>
                                 <h3 className="text-lg font-semibold mb-2">Overview</h3>
                                 <p className="text-slate-600 text-sm">
-                                    Hotelier Hub integrates with <strong>Channex.io</strong> (Connectivity Provider) to sync your rooms, rates, and availability with major OTAs like Booking.com, Airbnb, Expedia, and Agoda.
+                                    Staybooker integrates with <strong>Channex.io</strong> (Connectivity Provider) to sync your rooms, rates, and availability with major OTAs like Booking.com, Airbnb, Expedia, and Agoda.
                                 </p>
                             </div>
 

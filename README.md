@@ -1,4 +1,4 @@
-# Hotelier Hub - Monorepo Structure
+# Staybooker - Monorepo Structure
 
 ## 📁 Project Structure
 

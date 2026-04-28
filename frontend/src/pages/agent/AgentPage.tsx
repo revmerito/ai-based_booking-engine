@@ -21,7 +21,7 @@ interface ChatResponse {
 
 const AgentPage = () => {
     const [messages, setMessages] = useState<Message[]>([
-        { role: 'ai', content: 'Namaste! Main Hotelier Hub AI hun. Main aapki hotel growth aur operations mein kaise madad kar sakta hun?' }
+        { role: 'ai', content: 'Namaste! Main Staybooker AI hun. Main aapki hotel growth aur operations mein kaise madad kar sakta hun?' }
     ]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);

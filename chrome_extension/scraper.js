@@ -24,7 +24,7 @@
         banner.style.fontSize = "18px";
         banner.style.fontWeight = "bold";
         banner.style.fontFamily = "monospace";
-        banner.innerText = `HOTELIER HUB: Loading... (${HOST})`;
+        banner.innerText = `STAYBOOKER: Loading... (${HOST})`;
         document.body.prepend(banner);
     }
 

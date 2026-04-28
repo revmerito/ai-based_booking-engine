@@ -245,7 +245,7 @@ async def get_widget_code(
 
     hotel_slug = hotel.slug
     
-    html_code = f'''<!-- Hotelier Hub Booking Widget -->
+    html_code = f'''<!-- Staybooker Booking Widget -->
 <div id="hotelier-booking-widget" 
      data-hotel-slug="{hotel_slug}"
      data-theme="{settings.widget_theme}"
@@ -369,7 +369,7 @@ async def test_webhook(
         "event": "webhook.test",
         "hotel_id": current_user.hotel_id,
         "timestamp": datetime.utcnow().isoformat(),
-        "message": "This is a test webhook event from Hotelier Hub",
+        "message": "This is a test webhook event from Staybooker",
         "note": "If you are seeing this, your webhook integration is working correctly!"
     }
 

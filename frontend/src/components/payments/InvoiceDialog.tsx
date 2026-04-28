@@ -79,7 +79,7 @@ export function InvoiceDialog({ open, onOpenChange, payment }: InvoiceDialogProp
                 <div className="border rounded-lg p-8 bg-white max-h-[60vh] overflow-y-auto" ref={invoiceRef}>
                     <div className="flex justify-between items-start border-b pb-6 mb-6">
                         <div>
-                            <h1 className="text-2xl font-bold">HOTELIER HUB</h1>
+                            <h1 className="text-2xl font-bold">STAYBOOKER</h1>
                             <p className="text-sm text-muted-foreground mt-1">
                                 123 Hospital Road<br />
                                 Agra, UP 282001<br />

@@ -76,7 +76,7 @@ export function BookingStepper({ currentStep }: BookingStepperProps) {
                         <div className="flex items-center gap-4 text-slate-600">
                             <span className="font-bold text-slate-900 flex items-center">
                                 <MapPin className="w-3.5 h-3.5 mr-1" />
-                                {hotelSlug?.replace(/-/g, ' ').toUpperCase() || 'HOTELIER HUB'}
+                                {hotelSlug?.replace(/-/g, ' ').toUpperCase() || 'STAYBOOKER'}
                             </span>
                         </div>
                         <div className="flex gap-4">

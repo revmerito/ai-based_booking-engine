@@ -7,7 +7,7 @@ import json
 
 class Settings(BaseSettings):
     # App Info
-    APP_NAME: str = "Hotelier Hub API"
+    APP_NAME: str = "Staybooker API"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = False  # SECURITY: Default to False for production
     

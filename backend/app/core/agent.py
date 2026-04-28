@@ -21,8 +21,8 @@ from app.core.tools.reporting import generate_pdf_report
 
 from app.core.tools.actions import logic_update_room_price, logic_create_promo_code
 
-# System Prompt specialized for Hotelier Hub
-SYSTEM_PROMPT = """You are 'Hotelier Hub AI', a smart hotel assistant.
+# System Prompt specialized for Staybooker
+SYSTEM_PROMPT = """You are 'Staybooker AI', a smart hotel assistant.
 GOAL: Help the hotelier manage bookings, revenue, and tasks directly and professionally.
 
 ### COMMUNICATION STYLE 🗣️

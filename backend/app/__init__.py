@@ -1,1 +1,1 @@
-# Hotelier Hub Backend - Main App Package
+# Staybooker Backend - Main App Package
