@@ -48,27 +48,49 @@ interface LiveEvent {
 const COLORS = ['#0ea5e9', '#6366f1', '#f59e0b', '#10b981'];
 
 export const AnalyticsDashboard: React.FC = () => {
+  const [cachedData, setCachedData] = useState<Record<number, AnalyticsData>>({});
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [switching, setSwitching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [days, setDays] = useState(7);
   const [liveEvents, setLiveEvents] = useState<LiveEvent[]>([]);
   const [activeUsers, setActiveUsers] = useState<number>(0);
 
   useEffect(() => {
-    const fetchAnalytics = async () => {
-      setLoading(true);
+    const fetchAnalytics = async (daysCount: number, isSilent = false) => {
+      if (cachedData[daysCount]) {
+        if (!isSilent) setData(cachedData[daysCount]);
+        return;
+      }
+
+      if (!isSilent) {
+        if (data) setSwitching(true);
+        else setLoading(true);
+      }
+
       try {
-        const result = await api.get<AnalyticsData>(`/analytics/dashboard?days=${days}`);
-        setData(result);
+        const result = await api.get<AnalyticsData>(`/analytics/dashboard?days=${daysCount}`);
+        setCachedData(prev => ({ ...prev, [daysCount]: result }));
+        if (days === daysCount) setData(result);
       } catch (err: any) {
-        console.error("Failed to load analytics", err);
-        setError(err.message || "Failed to load analytics data.");
+        console.error(`Failed to load analytics for ${daysCount} days`, err);
+        if (!isSilent) setError(err.message || "Failed to load analytics data.");
       } finally {
-        setLoading(false);
+        if (!isSilent) {
+          setLoading(false);
+          setSwitching(false);
+        }
       }
     };
-    fetchAnalytics();
+
+    fetchAnalytics(days);
+
+    // Prefetch the opposite range silently
+    const otherDays = days === 7 ? 30 : 7;
+    if (!cachedData[otherDays]) {
+      fetchAnalytics(otherDays, true);
+    }
 
     // Real Live Feed Polling
     const fetchLiveStats = async () => {
@@ -132,6 +154,12 @@ export const AnalyticsDashboard: React.FC = () => {
           <p className="text-gray-500 mt-1">Real-time insights from your booking widget</p>
         </div>
         <div className="flex items-center gap-3">
+          {switching && (
+            <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 animate-pulse">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-slate-600" />
+              Updating...
+            </div>
+          )}
           <div className="hidden md:flex items-center gap-2 bg-emerald-50 text-emerald-700 px-4 py-2 rounded-full border border-emerald-100 animate-pulse">
             <Activity className="w-4 h-4" />
             <span className="text-sm font-semibold">{activeUsers} Live Visitors</span>
