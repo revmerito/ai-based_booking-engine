@@ -45,7 +45,7 @@ export const AnalyticsDashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [days, setDays] = useState(7);
   const [liveEvents, setLiveEvents] = useState<LiveEvent[]>([]);
-  const [activeUsers, setActiveUsers] = useState(Math.floor(Math.random() * 10) + 1);
+  const [activeUsers, setActiveUsers] = useState<number>(0);
 
   useEffect(() => {
     const fetchAnalytics = async () => {
