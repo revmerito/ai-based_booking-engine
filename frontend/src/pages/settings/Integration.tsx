@@ -43,6 +43,7 @@ import { useAuth } from '@/contexts/AuthContext';
 const IntegrationPage = () => {
     const { hotel } = useAuth();
     const [settings, setSettings] = useState<IntegrationSettings | null>(null);
+    const [activeHotelSlug, setActiveHotelSlug] = useState<string>('');
     const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
     const [widgetCode, setWidgetCode] = useState<WidgetCode | null>(null);
     const [loading, setLoading] = useState(true);
@@ -73,6 +74,19 @@ const IntegrationPage = () => {
 
     const fetchData = async () => {
         try {
+            // Fetch current hotel slug via properties
+            let slug = '';
+            try {
+                const properties = await apiClient.get<any[]>('/properties');
+                const currentProp = properties.find(p => p.is_current) || properties[0];
+                if (currentProp) {
+                    slug = currentProp.slug;
+                    setActiveHotelSlug(currentProp.slug);
+                }
+            } catch (err) {
+                console.error("Failed to fetch properties fallback", err);
+            }
+
             // Fetch integration settings
             const settingsData = await apiClient.get<IntegrationSettings>('/integration/settings');
             setSettings(settingsData);
@@ -98,11 +112,12 @@ const IntegrationPage = () => {
                 widgetData.instructions = widgetData.instructions.replace(urlRegex, currentOrigin);
 
                 // Replace placeholder slug with actual if available
-                if (hotel?.slug) {
+                const finalSlug = slug || hotel?.slug;
+                if (finalSlug) {
                     const slugRegex = /my-grand-hotel/g;
-                    widgetData.html_code = widgetData.html_code.replace(slugRegex, hotel.slug);
-                    widgetData.javascript_code = widgetData.javascript_code.replace(slugRegex, hotel.slug);
-                    widgetData.instructions = widgetData.instructions.replace(slugRegex, hotel.slug);
+                    widgetData.html_code = widgetData.html_code.replace(slugRegex, finalSlug);
+                    widgetData.javascript_code = widgetData.javascript_code.replace(slugRegex, finalSlug);
+                    widgetData.instructions = widgetData.instructions.replace(slugRegex, finalSlug);
                 }
             }
 
@@ -210,12 +225,12 @@ const IntegrationPage = () => {
                                 <Label>Direct Booking Link</Label>
                                 <div className="flex gap-2">
                                     <Input
-                                        value={`${window.location.origin}/book/${hotel?.id}/rooms`}
+                                        value={`${window.location.origin}/book/${activeHotelSlug || 'my-grand-hotel'}/rooms`}
                                         readOnly
                                     />
                                     <Button
                                         variant="outline"
-                                        onClick={() => copyToClipboard(`${window.location.origin}/book/${hotel?.id}/rooms`)}
+                                        onClick={() => copyToClipboard(`${window.location.origin}/book/${activeHotelSlug || 'my-grand-hotel'}/rooms`)}
                                     >
                                         Copy
                                     </Button>
@@ -397,7 +412,7 @@ const IntegrationPage = () => {
                                 <Label>Preview</Label>
                                 <div className="p-8 bg-slate-100 rounded-xl border border-slate-200 flex items-center justify-center transition-all duration-300">
                                     <iframe
-                                        src={`${window.location.origin}/book/${hotel?.slug || 'demo'}/widget`}
+                                        src={`${window.location.origin}/book/${activeHotelSlug || 'demo'}/widget`}
                                         className="w-full max-w-4xl border-0 rounded-none overflow-visible shadow-none transition-all duration-300"
                                         style={{ height: `${previewHeight}px` }}
                                         title="Booking Widget Preview"
@@ -417,7 +432,7 @@ const IntegrationPage = () => {
                                         onClick={() => copyToClipboard(`<div style="height: 120px; position: relative; z-index: 9999;">
     <iframe 
         id="hotelier-search-widget"
-        src="${window.location.origin}/book/${hotel?.slug}/widget" 
+        src="${window.location.origin}/book/${activeHotelSlug || 'demo'}/widget" 
         style="width: 100%; height: 600px; border: none; position: absolute; top: 0; left: 0; overflow: visible;" 
         scrolling="no" 
         title="Book Now">
@@ -432,7 +447,7 @@ const IntegrationPage = () => {
                                     {`<div style="height: 120px; position: relative; z-index: 9999;">
     <iframe 
         id="hotelier-search-widget"
-        src="${window.location.origin}/book/${hotel?.slug}/widget" 
+        src="${window.location.origin}/book/${activeHotelSlug || 'demo'}/widget" 
         style="width: 100%; height: 600px; border: none; position: absolute; top: 0; left: 0; overflow: visible;" 
         scrolling="no" 
         title="Book Now">
@@ -473,7 +488,7 @@ const IntegrationPage = () => {
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        onClick={() => copyToClipboard(`<script src="${window.location.origin}/widget-v3.js"></script><script>HotelierWidget.init({hotelSlug: '${hotel?.slug}', frontendUrl: '${window.location.origin}'});</script>`)}
+                                        onClick={() => copyToClipboard(`<script src="${window.location.origin}/widget-v3.js"></script><script>HotelierWidget.init({hotelSlug: '${activeHotelSlug || 'demo'}', frontendUrl: '${window.location.origin}'});</script>`)}
                                     >
                                         <Copy className="w-4 h-4 mr-2" />
                                         Copy Code
@@ -483,7 +498,7 @@ const IntegrationPage = () => {
                                     {`<script src="${window.location.origin}/widget-v3.js"></script>
 <script>
   HotelierWidget.init({
-    hotelSlug: '${hotel?.slug}',
+    hotelSlug: '${activeHotelSlug || 'demo'}',
     frontendUrl: '${window.location.origin}'
   });
 </script>`}
