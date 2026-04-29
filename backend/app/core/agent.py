@@ -601,7 +601,15 @@ def create_agent_executor(session: AsyncSession, user: User):
         check_availability_matrix
     ]
 
-    if settings.OPENAI_API_KEY:
+    if settings.GROQ_API_KEY:
+        from langchain_openai import ChatOpenAI
+        llm = ChatOpenAI(
+            model="openai/gpt-oss-120b",
+            temperature=1,
+            openai_api_key=settings.GROQ_API_KEY,
+            base_url="https://api.groq.com/openai/v1"
+        )
+    elif settings.OPENAI_API_KEY:
         from langchain_openai import ChatOpenAI
         llm = ChatOpenAI(
             model="gpt-4o-mini",
@@ -609,7 +617,7 @@ def create_agent_executor(session: AsyncSession, user: User):
             openai_api_key=settings.OPENAI_API_KEY
         )
     else:
-        # Fallback to Ollama
+        # Fallback to local Ollama
         llm = ChatOllama(
             model="gpt-oss:120b-cloud",
             temperature=0,
