@@ -72,6 +72,7 @@ class Settings(BaseSettings):
     # AI Config
     OPENAI_API_KEY: str | None = None
     OLLAMA_API_KEY: str | None = None
+    OLLAMA_HOST: str = "http://localhost:11434"
 
     # Redis Configuration (Support for Railway REDIS_URL)
     REDIS_URL: Optional[str] = None

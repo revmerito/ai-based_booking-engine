@@ -609,10 +609,11 @@ def create_agent_executor(session: AsyncSession, user: User):
             openai_api_key=settings.OPENAI_API_KEY
         )
     else:
-        # Fallback to local Ollama (only works if running locally)
+        # Fallback to Ollama
         llm = ChatOllama(
             model="gpt-oss:120b-cloud",
-            temperature=0
+            temperature=0,
+            base_url=settings.OLLAMA_HOST
         )
 
     # Fetch Hotel City for Context - Handle NoneType safety
