@@ -55,22 +55,8 @@ export function PriceComparisonWidget({ currentPrice }: PriceComparisonWidgetPro
                     <span className="font-bold text-green-700">{formatPrice(currentPrice)}</span>
                 </div>
 
-                <div className="p-3 bg-white space-y-2">
-                    {[
-                        { name: "Agoda", price: agodaPrice },
-                        { name: "Booking.com", price: bookingPrice },
-                        { name: "Expedia", price: expediaPrice },
-                    ].map((ota, i) => (
-                        <div key={i} className="flex justify-between items-center text-sm">
-                            <span className="text-slate-500">{ota.name}</span>
-                            <span className="text-slate-400 line-through decoration-slate-300">
-                                {formatPrice(ota.price)}
-                            </span>
-                        </div>
-                    ))}
-                </div>
-                <div className="bg-slate-50 p-2 text-center text-[10px] text-slate-400">
-                    *Estimated rates based on current market data
+                <div className="p-4 text-center text-xs text-slate-500 font-medium bg-white">
+                    Always book direct to get the guaranteed best prices and zero booking fees!
                 </div>
             </CardContent>
         </Card>

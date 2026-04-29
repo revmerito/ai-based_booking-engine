@@ -123,8 +123,7 @@ export function GuestsPage() {
           <CardContent className="p-4 flex items-center gap-4">
             <div>
               <p className="text-sm text-muted-foreground">Repeat Guests</p>
-              {/* Assuming we might add total_stays to Guest model later, for now mock calculation specific to this view */}
-              <p className="text-2xl font-bold">{guests.length > 0 ? Math.floor(guests.length * 0.3) : 0}</p>
+              <p className="text-2xl font-bold">{repeatGuestsCount}</p>
             </div>
           </CardContent>
         </Card>
