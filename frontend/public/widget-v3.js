@@ -5,21 +5,22 @@
         console.clear();
         console.log("%c HOTELIER WIDGET V3: FINAL FIXED SPACER ", "background: #000; color: #0f0; font-size: 16px; font-weight: bold;");
 
-        var container = document.getElementById('hotelier-booking-widget');
-        if (!container) {
-            console.error('Hotelier Widget: Container #hotelier-booking-widget not found');
-            return;
-        }
+        var hotelSlug = config ? config.hotelSlug : null;
+        var frontendUrl = config ? config.frontendUrl : 'https://zippy-pudding-7299b5.netlify.app';
 
-        var hotelSlug = config.hotelSlug || container.getAttribute('data-hotel-slug');
-        var frontendUrl = config.frontendUrl || 'https://zippy-pudding-7299b5.netlify.app'; // Default to production
+        var container = document.getElementById('hotelier-booking-widget');
+        if (container) {
+            hotelSlug = hotelSlug || container.getAttribute('data-hotel-slug');
+            if (hotelSlug) {
+                renderWidget(container, hotelSlug, frontendUrl);
+            }
+        }
 
         if (!hotelSlug) {
-            container.innerHTML = '<div style="color:red; border:1px solid red; padding:10px;">Error: Missing Hotel Slug</div>';
+            console.error('Hotelier Widget: Missing Hotel Slug in config or data-hotel-slug');
             return;
         }
 
-        renderWidget(container, hotelSlug, frontendUrl);
         renderChatWidget(hotelSlug, frontendUrl);
     }
 
