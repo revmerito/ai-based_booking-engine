@@ -155,32 +155,24 @@ export const AnalyticsDashboard: React.FC = () => {
           title="Total Revenue" 
           value={`₹${(data.revenue_total || 0).toLocaleString()}`} 
           icon={<DollarSign className="w-6 h-6 text-emerald-600" />}
-          trend="+18.5%"
-          trendUp={true}
           description="Gross earnings this period"
         />
         <StatCard 
           title="Conversion Rate" 
           value={`${data.conversion_rate || 0}%`} 
           icon={<Zap className="w-6 h-6 text-yellow-600" />}
-          trend="+2.4%"
-          trendUp={true}
           description="Look-to-book ratio"
         />
         <StatCard 
           title="ADR" 
           value={`₹${(data.avg_daily_rate || 0).toLocaleString()}`} 
           icon={<ArrowUpRight className="w-6 h-6 text-blue-600" />}
-          trend="+₹450"
-          trendUp={true}
           description="Average Daily Rate"
         />
         <StatCard 
           title="Occupancy" 
           value={`${data.occupancy_rate || 0}%`} 
           icon={<Calendar className="w-6 h-6 text-purple-600" />}
-          trend="+5%"
-          trendUp={true}
           description="Rooms booked vs total"
         />
       </div>
@@ -388,8 +380,8 @@ const StatCard: React.FC<{
   title: string; 
   value: string; 
   icon: React.ReactNode;
-  trend: string;
-  trendUp: boolean;
+  trend?: string;
+  trendUp?: boolean;
   description: string;
 }> = ({ title, value, icon, trend, trendUp, description }) => (
   <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-500 group relative overflow-hidden">
@@ -400,10 +392,12 @@ const StatCard: React.FC<{
       <div className="p-3 bg-slate-50 rounded-2xl group-hover:bg-slate-900 group-hover:text-white transition-colors duration-500">
         {icon}
       </div>
-      <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg border ${trendUp ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-red-50 text-red-600 border-red-100'}`}>
-        {trendUp ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-        {trend}
-      </div>
+      {trend && (
+        <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg border ${trendUp ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-red-50 text-red-600 border-red-100'}`}>
+          {trendUp ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+          {trend}
+        </div>
+      )}
     </div>
     <div className="mt-6 relative z-10">
       <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{title}</p>
