@@ -6,7 +6,7 @@
         console.log("%c HOTELIER WIDGET V3: FINAL FIXED SPACER ", "background: #000; color: #0f0; font-size: 16px; font-weight: bold;");
 
         var hotelSlug = config ? config.hotelSlug : null;
-        var frontendUrl = config ? config.frontendUrl : 'https://zippy-pudding-7299b5.netlify.app';
+        var frontendUrl = config && config.frontendUrl ? config.frontendUrl : window.location.origin;
 
         var container = document.getElementById('hotelier-booking-widget');
         if (container) {
