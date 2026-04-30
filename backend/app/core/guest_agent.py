@@ -270,12 +270,18 @@ def create_guest_agent_graph(
         from langchain_openai import ChatOpenAI
         
         # Determine Base URL based on provider if not explicitly provided
-        default_base_url = "https://api.groq.com/openai/v1" # Default to Groq
-        if ai_provider == "openai":
+        default_base_url = None
+        if ai_provider == "groq":
+            default_base_url = "https://api.groq.com/openai/v1"
+        elif ai_provider == "openai":
             default_base_url = None # Use default OpenAI URL
         
+        # If no model is provided, we CANNOT initialize (Zero hardcoding)
+        if not ai_model:
+            return None
+
         llm = ChatOpenAI(
-            model=ai_model or "llama-3.1-70b-versatile",
+            model=ai_model,
             temperature=0.7,
             openai_api_key=target_api_key,
             base_url=ai_base_url or default_base_url

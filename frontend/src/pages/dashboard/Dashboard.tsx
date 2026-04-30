@@ -10,11 +10,14 @@ import {
   TrendingUp,
   Loader2,
   ExternalLink,
-  MoreHorizontal
+  MoreHorizontal,
+  Sparkles,
+  AlertTriangle
 } from 'lucide-react';
 import { motion, Variants } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiClient } from '@/api/client';
 import { DashboardStats } from '@/types/api';
@@ -92,6 +95,16 @@ export function DashboardPage() {
     staleTime: 300000, // 5 mins
     refetchOnWindowFocus: false
   });
+  
+  // 4. Fetch Integration Settings (to check AI status)
+  const { data: integration } = useQuery<any>({
+    queryKey: ['integrationSettings'],
+    queryFn: () => apiClient.get<any>('/integration/settings'),
+    staleTime: 600000,
+    refetchOnWindowFocus: false
+  });
+
+  const aiNotConfigured = !integration?.ai_api_key || !integration?.ai_model;
 
   const isLoading = isStatsLoading;
 
@@ -139,7 +152,6 @@ export function DashboardPage() {
           Welcome back, {user?.name?.split(' ')[0] || 'User'}. Here's what's happening at {hotel?.name || 'your hotel'}.
         </p>
 
-        {/* Welcome Message with Hover Lift */}
         <motion.div
           className="mt-4"
           whileHover={{ scale: 1.01 }}
@@ -147,6 +159,28 @@ export function DashboardPage() {
         >
           <WelcomeCard message="Today is a great day to manage your hotel! 🚀" />
         </motion.div>
+
+        {/* AI Configuration Alert */}
+        {aiNotConfigured && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-4"
+          >
+            <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900 shadow-sm">
+              <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              <AlertTitle className="text-amber-800 dark:text-amber-300 font-bold flex items-center gap-2">
+                <Sparkles className="h-4 w-4 animate-pulse" /> AI Concierge Inactive
+              </AlertTitle>
+              <AlertDescription className="text-amber-700 dark:text-amber-400 flex flex-col sm:flex-row sm:items-center justify-between gap-2 mt-1">
+                <span>Configure your AI API Key and Model to activate the Guest AI Concierge on your website.</span>
+                <Button variant="outline" size="sm" className="bg-white hover:bg-amber-100 text-amber-700 border-amber-200 h-8" asChild>
+                  <Link to="/settings/integration">Configure Now</Link>
+                </Button>
+              </AlertDescription>
+            </Alert>
+          </motion.div>
+        )}
       </motion.div>
 
       {/* Stats Grid */}
