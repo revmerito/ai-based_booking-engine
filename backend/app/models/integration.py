@@ -72,6 +72,9 @@ class IntegrationSettings(SQLModel, table=True):
     # AI dynamic configurations
     ai_provider: Optional[str] = Field(default="groq")
     ai_api_key: Optional[str] = Field(default=None)
+    
+    # Sync Integrations
+    google_sheet_url: Optional[str] = None
 
     # Metadata
     created_at: datetime = Field(default_factory=datetime.utcnow)
@@ -117,6 +120,7 @@ class IntegrationSettingsRead(BaseModel):
     require_https: bool
     ai_provider: Optional[str] = "groq"
     ai_api_key: Optional[str] = None
+    google_sheet_url: Optional[str] = None
 
 
 class IntegrationSettingsUpdate(BaseModel):
@@ -132,6 +136,7 @@ class IntegrationSettingsUpdate(BaseModel):
     require_https: Optional[bool] = None
     ai_provider: Optional[str] = None
     ai_api_key: Optional[str] = None
+    google_sheet_url: Optional[str] = None
 
 
 class WidgetCodeResponse(BaseModel):

@@ -12,6 +12,7 @@ from app.models.addon import AddOn
 from app.models.notification import Notification
 from app.models.subscription import Subscription
 from app.models.timeline import BookingTimeline
+from app.models.lead import Lead
 
 __all__ = [
     "User", "UserRole",
@@ -25,5 +26,6 @@ __all__ = [
     "AddOn",
     "Notification",
     "Subscription",
-    "BookingTimeline"
+    "BookingTimeline",
+    "Lead"
 ]

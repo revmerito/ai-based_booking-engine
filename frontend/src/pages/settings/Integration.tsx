@@ -634,6 +634,25 @@ const IntegrationPage = () => {
                                                     Leave empty to use platform defaults.
                                                 </p>
                                             </div>
+
+                                            <div className="border-t pt-4">
+                                                <Label className="flex items-center gap-2">
+                                                    <Globe className="w-4 h-4" />
+                                                    Google Sheets Sync (Webhook)
+                                                </Label>
+                                                <Input
+                                                    placeholder="https://script.google.com/macros/s/.../exec"
+                                                    value={settings.google_sheet_url || ''}
+                                                    onChange={(e) =>
+                                                        updateSettings({ google_sheet_url: e.target.value })
+                                                    }
+                                                    className="mt-1"
+                                                />
+                                                <p className="text-xs text-muted-foreground mt-1">
+                                                    Sync guest leads directly to your receptionist's Google Sheet in real-time.
+                                                </p>
+                                            </div>
+                                        </div>
                                         </div>
                                     </div>
                                 </>

@@ -179,6 +179,48 @@ def create_guest_agent_graph(session: AsyncSession, hotel_id: str, ai_provider: 
                 "phone": phone
             }
         }
+
+        # 3. Save Lead to Database
+        from app.models.lead import Lead
+        lead = Lead(
+            hotel_id=hotel_id,
+            guest_name=f"{first_name} {last_name}".strip(),
+            guest_email=email,
+            guest_phone=phone,
+            room_type_preference=room.name,
+            check_in=check_in,
+            check_out=check_out,
+            num_adults=adults,
+            num_children=children,
+            ai_conversation_summary=f"Booking prepared for {room.name}"
+        )
+        session.add(lead)
+        await session.commit()
+
+        # 4. Sync to Google Sheets (if configured)
+        from app.models.integration import IntegrationSettings
+        int_query = select(IntegrationSettings).where(IntegrationSettings.hotel_id == hotel_id)
+        int_res = await session.execute(int_query)
+        int_settings = int_res.scalar_one_or_none()
+
+        if int_settings and int_settings.google_sheet_url:
+            from app.core.external_sync import sync_to_google_sheet
+            sync_data = {
+                "hotel_id": hotel_id,
+                "guest_name": lead.guest_name,
+                "guest_email": lead.guest_email,
+                "guest_phone": lead.guest_phone,
+                "room_type": lead.room_type_preference,
+                "check_in": lead.check_in,
+                "check_out": lead.check_out,
+                "adults": lead.num_adults,
+                "children": lead.num_children,
+                "status": lead.status,
+                "timestamp": lead.created_at.isoformat()
+            }
+            # Run async sync
+            import asyncio
+            asyncio.create_task(sync_to_google_sheet(int_settings.google_sheet_url, sync_data))
         
         import json
         return f"ACTION:BOOKING_LINK|{json.dumps(booking_data)}"
@@ -197,6 +239,13 @@ def create_guest_agent_graph(session: AsyncSession, hotel_id: str, ai_provider: 
         details = f"**{room.name}**\n- **Description**: {room.description}\n- **Base Price**: {room.base_price} INR"
         if hasattr(room, 'amenities') and room.amenities:
              details += f"\n- **Amenities**: {room.amenities}"
+        
+        # Add Images Tag
+        if hasattr(room, 'photos') and room.photos:
+            photo_urls = [p['url'] for p in room.photos if 'url' in p]
+            if photo_urls:
+                details += f"\n\n[IMAGES: {', '.join(photo_urls)}]"
+                
         return details
 
     tools = [get_hotel_info, get_hotel_amenities, check_availability, get_room_details, prepare_booking]

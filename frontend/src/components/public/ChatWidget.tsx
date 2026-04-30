@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircle, X, Send, Bot, User } from 'lucide-react';
+import { MessageCircle, X, Send, Bot, User, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -174,9 +174,25 @@ export function ChatWidget({ hotelSlug, primaryColor = '#3B82F6' }: ChatWidgetPr
                                                                 li: ({ children }) => <li className="text-[13px]">{children}</li>,
                                                             }}
                                                         >
-                                                            {msg.content.split("ACTION:BOOKING_LINK|")[0]}
+                                                            {msg.content.split("ACTION:BOOKING_LINK|")[0].replace(/\[IMAGES: .*?\]/g, '')}
                                                         </ReactMarkdown>
                                                     </div>
+
+                                                    {/* Room Image Gallery Injection */}
+                                                    {msg.role === 'assistant' && msg.content.includes("[IMAGES:") && (
+                                                        <div className="mt-2 grid grid-cols-2 gap-1.5">
+                                                            {msg.content.match(/\[IMAGES: (.*?)\]/)?.[1].split(',').map((url, idx) => (
+                                                                <div key={idx} className="relative aspect-[4/3] rounded-lg overflow-hidden border border-gray-100 group">
+                                                                    <img 
+                                                                        src={url.trim()} 
+                                                                        alt="Room" 
+                                                                        className="w-full h-full object-cover transition-transform group-hover:scale-110"
+                                                                        onError={(e) => (e.currentTarget.style.display = 'none')}
+                                                                    />
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
 
                                                     {/* Booking Button Injection */}
                                                     {msg.role === 'assistant' && msg.content.includes("ACTION:BOOKING_LINK|") && (
