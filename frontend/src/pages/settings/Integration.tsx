@@ -28,6 +28,7 @@ interface IntegrationSettings {
     webhook_url?: string;
     ai_provider?: string;
     ai_api_key?: string;
+    google_sheet_url?: string;
 }
 
 interface WidgetCode {
@@ -653,7 +654,6 @@ const IntegrationPage = () => {
                                                 </p>
                                             </div>
                                         </div>
-                                        </div>
                                     </div>
                                 </>
                             )}
@@ -661,7 +661,7 @@ const IntegrationPage = () => {
                     </Card>
                 </TabsContent>
             </Tabs>
-        </div >
+        </div>
     );
 };
 
