@@ -608,6 +608,41 @@ const IntegrationPage = () => {
                                         </h4>
                                         
                                         <div className="grid gap-4">
+                                            <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30 p-4 rounded-xl mb-2">
+                                                <h4 className="text-sm font-bold text-blue-800 dark:text-blue-400 flex items-center gap-2 mb-1">
+                                                    <Sparkles className="h-4 w-4" /> Recommended Setup
+                                                </h4>
+                                                <p className="text-[11px] text-blue-700/80 dark:text-blue-400/80 leading-relaxed">
+                                                    We recommend using <strong>Meta Llama 3.3 70B</strong> on Groq for the best balance of speed and intelligence.
+                                                </p>
+                                                <div className="mt-3 flex flex-wrap gap-2">
+                                                    <Button 
+                                                        variant="outline" 
+                                                        size="sm" 
+                                                        className="h-7 text-[10px] bg-white border-blue-200 hover:bg-blue-50"
+                                                        onClick={() => updateSettings({ 
+                                                            ai_provider: 'groq', 
+                                                            ai_model: 'llama-3.3-70b-versatile',
+                                                            ai_base_url: 'https://api.groq.com/openai/v1'
+                                                        })}
+                                                    >
+                                                        Auto-Config Groq (Best)
+                                                    </Button>
+                                                    <Button 
+                                                        variant="outline" 
+                                                        size="sm" 
+                                                        className="h-7 text-[10px] bg-white border-slate-200"
+                                                        onClick={() => updateSettings({ 
+                                                            ai_provider: 'openai', 
+                                                            ai_model: 'gpt-4o-mini',
+                                                            ai_base_url: ''
+                                                        })}
+                                                    >
+                                                        Auto-Config OpenAI
+                                                    </Button>
+                                                </div>
+                                            </div>
+
                                             <div>
                                                 <Label>AI Provider</Label>
                                                 <select
@@ -617,33 +652,39 @@ const IntegrationPage = () => {
                                                         updateSettings({ ai_provider: e.target.value })
                                                     }
                                                 >
-                                                    <option value="groq">Groq (Default)</option>
-                                                    <option value="deepseek">DeepSeek</option>
-                                                    <option value="openai">OpenAI</option>
+                                                    <option value="groq">Groq Cloud (Fastest)</option>
+                                                    <option value="openai">OpenAI (Premium)</option>
+                                                    <option value="deepseek">DeepSeek (Cost Effective)</option>
                                                 </select>
                                             </div>
 
                                             <div>
-                                                <Label>Custom API Key (Optional)</Label>
+                                                <Label>Custom API Key</Label>
                                                 <Input
                                                     type="password"
-                                                    placeholder="Provide your own provider API Key"
+                                                    placeholder="sk-..."
                                                     value={settings.ai_api_key || ''}
                                                     onChange={(e) =>
                                                         updateSettings({ ai_api_key: e.target.value })
                                                     }
                                                 />
+                                                <p className="text-[10px] text-muted-foreground mt-1">
+                                                    Get key: <a href="https://console.groq.com/keys" target="_blank" className="text-primary underline">Groq Console</a> or <a href="https://platform.openai.com/api-keys" target="_blank" className="text-primary underline">OpenAI Dashboard</a>
+                                                </p>
                                             </div>
 
                                             <div>
-                                                <Label>AI Model</Label>
+                                                <Label>AI Model ID</Label>
                                                 <Input
-                                                    placeholder="e.g. llama-3.1-70b-versatile"
+                                                    placeholder="e.g. llama-3.3-70b-versatile"
                                                     value={settings.ai_model || ''}
                                                     onChange={(e) =>
                                                         updateSettings({ ai_model: e.target.value })
                                                     }
                                                 />
+                                                <p className="text-[10px] text-muted-foreground mt-1 italic">
+                                                    Popular: llama-3.3-70b-versatile, llama-3.1-8b-instant, gpt-4o, gpt-4o-mini
+                                                </p>
                                             </div>
 
                                             <div>
@@ -656,7 +697,7 @@ const IntegrationPage = () => {
                                                     }
                                                 />
                                                 <p className="text-[10px] text-muted-foreground mt-1">
-                                                    Override default provider URL (useful for OpenRouter/Local)
+                                                    Use for OpenRouter, local models (LM Studio/Ollama), or proxies.
                                                 </p>
                                             </div>
                                         </div>
