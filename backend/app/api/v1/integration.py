@@ -105,6 +105,10 @@ async def update_integration_settings(
             hotel.ai_provider = updates_dict['ai_provider']
         if 'ai_api_key' in updates_dict:
             hotel.ai_api_key = updates_dict['ai_api_key']
+        if 'ai_model' in updates_dict:
+            hotel.ai_model = updates_dict['ai_model']
+        if 'ai_base_url' in updates_dict:
+            hotel.ai_base_url = updates_dict['ai_base_url']
         session.add(hotel)
 
     await session.commit()

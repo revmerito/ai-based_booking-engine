@@ -88,7 +88,9 @@ class Hotel(HotelBase, table=True):
     # AI dynamic configurations
     ai_provider: Optional[str] = Field(default="groq")
     ai_api_key: Optional[str] = Field(default=None)
-
+    ai_model: Optional[str] = Field(default="llama-3.1-70b-versatile")
+    ai_base_url: Optional[str] = Field(default=None)
+    
     # Relationships
     users: List["User"] = Relationship(back_populates="hotel")
     room_types: List["RoomType"] = Relationship(back_populates="hotel")
