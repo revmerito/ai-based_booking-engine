@@ -662,7 +662,7 @@ const IntegrationPage = () => {
                                                 <Label>Custom API Key</Label>
                                                 <Input
                                                     type="password"
-                                                    placeholder="sk-..."
+                                                    placeholder="Paste your key here (e.g. gsk_... or sk-...)"
                                                     value={settings.ai_api_key || ''}
                                                     onChange={(e) =>
                                                         updateSettings({ ai_api_key: e.target.value })
@@ -674,16 +674,16 @@ const IntegrationPage = () => {
                                             </div>
 
                                             <div>
-                                                <Label>AI Model ID</Label>
+                                                <Label>AI Model ID (Not API Key)</Label>
                                                 <Input
-                                                    placeholder="e.g. llama-3.3-70b-versatile"
+                                                    placeholder="Enter model name (e.g. llama-3.3-70b-versatile)"
                                                     value={settings.ai_model || ''}
                                                     onChange={(e) =>
                                                         updateSettings({ ai_model: e.target.value })
                                                     }
                                                 />
                                                 <p className="text-[10px] text-muted-foreground mt-1 italic">
-                                                    Popular: llama-3.3-70b-versatile, llama-3.1-8b-instant, gpt-4o, gpt-4o-mini
+                                                    Don't put your API key here! Use model names like: llama-3.3-70b-versatile
                                                 </p>
                                             </div>
 
