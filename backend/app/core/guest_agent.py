@@ -40,7 +40,14 @@ DATE HANDLING (IMPORTANT):
 Current Date: {current_date}
 """
 
-def create_guest_agent_graph(session: AsyncSession, hotel_id: str, ai_provider: str = None, ai_api_key: str = None):
+def create_guest_agent_graph(
+    session: AsyncSession, 
+    hotel_id: str, 
+    ai_provider: str = None, 
+    ai_api_key: str = None,
+    ai_model: str = None,
+    ai_base_url: str = None
+):
     """
     Creates a Guest-Facing Agent Graph with dynamic LLM provider injection.
     """
@@ -261,11 +268,17 @@ def create_guest_agent_graph(session: AsyncSession, hotel_id: str, ai_provider: 
             return None
             
         from langchain_openai import ChatOpenAI
+        
+        # Determine Base URL based on provider if not explicitly provided
+        default_base_url = "https://api.groq.com/openai/v1" # Default to Groq
+        if ai_provider == "openai":
+            default_base_url = None # Use default OpenAI URL
+        
         llm = ChatOpenAI(
-            model="llama-3.1-70b-versatile",
+            model=ai_model or "llama-3.1-70b-versatile",
             temperature=0.7,
             openai_api_key=target_api_key,
-            base_url="https://api.groq.com/openai/v1"
+            base_url=ai_base_url or default_base_url
         )
 
         formatted_prompt = SYSTEM_PROMPT.format(current_date=date.today().isoformat())

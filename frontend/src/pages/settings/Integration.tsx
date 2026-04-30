@@ -28,6 +28,8 @@ interface IntegrationSettings {
     webhook_url?: string;
     ai_provider?: string;
     ai_api_key?: string;
+    ai_model?: string;
+    ai_base_url?: string;
     google_sheet_url?: string;
 }
 
@@ -631,26 +633,30 @@ const IntegrationPage = () => {
                                                         updateSettings({ ai_api_key: e.target.value })
                                                     }
                                                 />
-                                                <p className="text-xs text-muted-foreground mt-1">
-                                                    Leave empty to use platform defaults.
-                                                </p>
                                             </div>
 
-                                            <div className="border-t pt-4">
-                                                <Label className="flex items-center gap-2">
-                                                    <Globe className="w-4 h-4" />
-                                                    Google Sheets Sync (Webhook)
-                                                </Label>
+                                            <div>
+                                                <Label>AI Model</Label>
                                                 <Input
-                                                    placeholder="https://script.google.com/macros/s/.../exec"
-                                                    value={settings.google_sheet_url || ''}
+                                                    placeholder="e.g. llama-3.1-70b-versatile"
+                                                    value={settings.ai_model || ''}
                                                     onChange={(e) =>
-                                                        updateSettings({ google_sheet_url: e.target.value })
+                                                        updateSettings({ ai_model: e.target.value })
                                                     }
-                                                    className="mt-1"
                                                 />
-                                                <p className="text-xs text-muted-foreground mt-1">
-                                                    Sync guest leads directly to your receptionist's Google Sheet in real-time.
+                                            </div>
+
+                                            <div>
+                                                <Label>Base URL (Optional)</Label>
+                                                <Input
+                                                    placeholder="e.g. https://api.groq.com/openai/v1"
+                                                    value={settings.ai_base_url || ''}
+                                                    onChange={(e) =>
+                                                        updateSettings({ ai_base_url: e.target.value })
+                                                    }
+                                                />
+                                                <p className="text-[10px] text-muted-foreground mt-1">
+                                                    Override default provider URL (useful for OpenRouter/Local)
                                                 </p>
                                             </div>
                                         </div>

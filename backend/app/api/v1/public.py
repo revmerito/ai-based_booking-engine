@@ -643,7 +643,9 @@ async def chat_with_guest_ai(
             session, 
             hotel.id, 
             getattr(integration_settings, 'ai_provider', None) if integration_settings else getattr(hotel, 'ai_provider', None), 
-            getattr(integration_settings, 'ai_api_key', None) if integration_settings else getattr(hotel, 'ai_api_key', None)
+            getattr(integration_settings, 'ai_api_key', None) if integration_settings else getattr(hotel, 'ai_api_key', None),
+            getattr(integration_settings, 'ai_model', None) if integration_settings else None,
+            getattr(integration_settings, 'ai_base_url', None) if integration_settings else None
         )
         if not agent:
             return GuestChatResponse(response="AI Concierge is currently offline for this hotel. Please contact the front desk directly.")
