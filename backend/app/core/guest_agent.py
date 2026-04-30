@@ -11,6 +11,7 @@ from app.models.booking import Booking, BookingStatus, BookingSource
 from app.models.room import RoomType
 from app.models.hotel import Hotel, HotelSettings
 from app.models.amenity import Amenity
+from app.models.lead import Lead
 from app.core.config import get_settings
 
 # Explicitly Read-Only System Prompt
@@ -258,8 +259,8 @@ def create_guest_agent_graph(session: AsyncSession, hotel_id: str, ai_provider: 
         if target_api_key:
             from langchain_openai import ChatOpenAI
             llm = ChatOpenAI(
-                model="openai/gpt-oss-120b",
-                temperature=1,
+                model="llama-3.1-70b-versatile",
+                temperature=0.7,
                 openai_api_key=target_api_key,
                 base_url="https://api.groq.com/openai/v1"
             )
