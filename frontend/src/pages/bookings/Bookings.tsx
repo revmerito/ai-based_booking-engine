@@ -30,6 +30,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { apiClient } from '@/api/client';
 
@@ -60,6 +66,18 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'second
   cancelled: { label: 'Cancelled', variant: 'destructive' },
 };
 
+interface LeadData {
+  id: string;
+  guest_name: string;
+  guest_email?: string;
+  guest_phone: string;
+  room_type_preference?: string;
+  check_in?: string;
+  check_out?: string;
+  status: string;
+  created_at: string;
+}
+
 export function BookingsPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -79,6 +97,13 @@ export function BookingsPage() {
       return await apiClient.get<BookingData[]>('/bookings', params);
     },
     placeholderData: keepPreviousData
+  });
+
+  const { data: leads = [], isLoading: leadsLoading } = useQuery({
+    queryKey: ['leads'],
+    queryFn: async () => {
+      return await apiClient.get<LeadData[]>('/leads');
+    }
   });
 
   const fetchBookings = () => {
@@ -175,129 +200,194 @@ export function BookingsPage() {
         onSuccess={fetchBookings}
       />
 
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-4">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search by guest name or booking ID..."
-            className="pl-10"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[150px]">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="confirmed">Confirmed</SelectItem>
-            <SelectItem value="checked_in">Checked In</SelectItem>
-            <SelectItem value="checked_out">Checked Out</SelectItem>
-            <SelectItem value="cancelled">Cancelled</SelectItem>
-          </SelectContent>
-        </Select>
-        <Button variant="outline" className="gap-2" onClick={() => toast({ title: 'Feature Coming Soon', description: 'Advanced filtering options are under development.' })}>
-          <Filter className="h-4 w-4" />
-          More Filters
-        </Button>
-      </div>
+      <Tabs defaultValue="bookings" className="w-full">
+        <TabsList className="grid w-full max-w-md grid-cols-2 mb-4">
+          <TabsTrigger value="bookings">Confirmed Bookings</TabsTrigger>
+          <TabsTrigger value="leads" className="relative">
+            AI Enquiries (Leads)
+            {leads.length > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-white">
+                {leads.length}
+              </span>
+            )}
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Empty State */}
-      {filteredBookings.length === 0 && (
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <CalendarDays className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium">No Bookings Found</h3>
-            <p className="text-muted-foreground text-center mt-1">
-              {statusFilter !== 'all' || searchQuery
-                ? 'No matching bookings found.'
-                : 'Start by creating your first booking.'}
-            </p>
-          </CardContent>
-        </Card>
-      )}
+        <TabsContent value="bookings" className="space-y-4">
+          {/* Filters */}
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search by guest name or booking ID..."
+                className="pl-10"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="confirmed">Confirmed</SelectItem>
+                <SelectItem value="checked_in">Checked In</SelectItem>
+                <SelectItem value="checked_out">Checked Out</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="outline" className="gap-2" onClick={() => toast({ title: 'Feature Coming Soon', description: 'Advanced filtering options are under development.' })}>
+              <Filter className="h-4 w-4" />
+              More Filters
+            </Button>
+          </div>
 
-      {/* Bookings Table */}
-      {filteredBookings.length > 0 && (
-        <Card>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Booking ID</TableHead>
-                  <TableHead>Guest</TableHead>
-                  <TableHead>Room</TableHead>
-                  <TableHead>Check In</TableHead>
-                  <TableHead>Check Out</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
-                  <TableHead className="w-[50px]"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredBookings.map((booking) => (
-                  <TableRow key={booking.id}>
-                    <TableCell className="font-medium">{booking.booking_number}</TableCell>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">
-                          {booking.guest?.first_name} {booking.guest?.last_name}
-                        </p>
-                        <p className="text-sm text-muted-foreground">{booking.guest?.email}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell>{booking.rooms?.[0]?.room_type_name || 'N/A'}</TableCell>
-                    <TableCell>{booking.check_in}</TableCell>
-                    <TableCell>{booking.check_out}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={statusConfig[booking.status]?.variant || 'default'}
-                        className={booking.status === 'confirmed' ? 'bg-green-600 hover:bg-green-700' : ''}
-                      >
-                        {statusConfig[booking.status]?.label || booking.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right font-medium">
-                      {formatCurrency(booking.total_amount)}
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleViewDetails(booking)}>
-                            <Eye className="mr-2 h-4 w-4" />
-                            View Details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleEditBooking(booking)}>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Edit Booking
-                          </DropdownMenuItem>
-                          {booking.status !== 'cancelled' && (
-                            <DropdownMenuItem
-                              className="text-destructive"
-                              onClick={() => handleCancelBooking(booking.id)}
-                            >
-                              <X className="mr-2 h-4 w-4" />
-                              Cancel Booking
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
+          {/* Empty State */}
+          {filteredBookings.length === 0 && (
+            <Card className="border-dashed">
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <CalendarDays className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium">No Bookings Found</h3>
+                <p className="text-muted-foreground text-center mt-1">
+                  {statusFilter !== 'all' || searchQuery
+                    ? 'No matching bookings found.'
+                    : 'Start by creating your first booking.'}
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Bookings Table */}
+          {filteredBookings.length > 0 && (
+            <Card>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Booking ID</TableHead>
+                      <TableHead>Guest</TableHead>
+                      <TableHead>Room</TableHead>
+                      <TableHead>Check In</TableHead>
+                      <TableHead>Check Out</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Total</TableHead>
+                      <TableHead className="w-[50px]"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredBookings.map((booking) => (
+                      <TableRow key={booking.id}>
+                        <TableCell className="font-medium">{booking.booking_number}</TableCell>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">
+                              {booking.guest?.first_name} {booking.guest?.last_name}
+                            </p>
+                            <p className="text-sm text-muted-foreground">{booking.guest?.email}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>{booking.rooms?.[0]?.room_type_name || 'N/A'}</TableCell>
+                        <TableCell>{booking.check_in}</TableCell>
+                        <TableCell>{booking.check_out}</TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={statusConfig[booking.status]?.variant || 'default'}
+                            className={booking.status === 'confirmed' ? 'bg-green-600 hover:bg-green-700' : ''}
+                          >
+                            {statusConfig[booking.status]?.label || booking.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          {formatCurrency(booking.total_amount)}
+                        </TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handleViewDetails(booking)}>
+                                <Eye className="mr-2 h-4 w-4" />
+                                View Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleEditBooking(booking)}>
+                                <Edit className="mr-2 h-4 w-4" />
+                                Edit Booking
+                              </DropdownMenuItem>
+                              {booking.status !== 'cancelled' && (
+                                <DropdownMenuItem
+                                  className="text-destructive"
+                                  onClick={() => handleCancelBooking(booking.id)}
+                                >
+                                  <X className="mr-2 h-4 w-4" />
+                                  Cancel Booking
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="leads">
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Guest Name</TableHead>
+                    <TableHead>Phone</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Room Interested</TableHead>
+                    <TableHead>Check-in/Out</TableHead>
+                    <TableHead>Date Captured</TableHead>
+                    <TableHead>Status</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
+                </TableHeader>
+                <TableBody>
+                  {leads.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
+                        No AI enquiries yet.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    leads.map((lead) => (
+                      <TableRow key={lead.id}>
+                        <TableCell className="font-medium">{lead.guest_name}</TableCell>
+                        <TableCell>{lead.guest_phone}</TableCell>
+                        <TableCell>{lead.guest_email || '-'}</TableCell>
+                        <TableCell>{lead.room_type_preference || 'Not Specified'}</TableCell>
+                        <TableCell>
+                          {lead.check_in && lead.check_out 
+                            ? `${lead.check_in} to ${lead.check_out}`
+                            : 'Not decided'}
+                        </TableCell>
+                        <TableCell>{new Date(lead.created_at).toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="capitalize">
+                            {lead.status}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
