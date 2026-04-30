@@ -253,19 +253,20 @@ def create_guest_agent_graph(session: AsyncSession, hotel_id: str, ai_provider: 
     
     try:
 
-        # Resolve dynamic provider/keys
-        target_api_key = ai_api_key or settings.GROQ_API_KEY
+        # Resolve dynamic provider/keys - NO FALLBACK to platform key to save costs
+        target_api_key = ai_api_key
         
-        if target_api_key:
-            from langchain_openai import ChatOpenAI
-            llm = ChatOpenAI(
-                model="llama-3.1-70b-versatile",
-                temperature=0.7,
-                openai_api_key=target_api_key,
-                base_url="https://api.groq.com/openai/v1"
-            )
-        else:
-            raise ValueError("No valid GROQ_API_KEY available for this hotel.")
+        if not target_api_key:
+            # Return a "dummy" graph or None to signal that AI is disabled for this hotel
+            return None
+            
+        from langchain_openai import ChatOpenAI
+        llm = ChatOpenAI(
+            model="llama-3.1-70b-versatile",
+            temperature=0.7,
+            openai_api_key=target_api_key,
+            base_url="https://api.groq.com/openai/v1"
+        )
 
         formatted_prompt = SYSTEM_PROMPT.format(current_date=date.today().isoformat())
 

@@ -645,7 +645,9 @@ async def chat_with_guest_ai(
             getattr(integration_settings, 'ai_provider', None) if integration_settings else getattr(hotel, 'ai_provider', None), 
             getattr(integration_settings, 'ai_api_key', None) if integration_settings else getattr(hotel, 'ai_api_key', None)
         )
-        
+        if not agent:
+            return GuestChatResponse(response="AI Concierge is currently offline for this hotel. Please contact the front desk directly.")
+
         # 4. Invoke Agent
         # LangGraph inputs: {"messages": [...]}
         response = await agent.ainvoke({"messages": messages})
