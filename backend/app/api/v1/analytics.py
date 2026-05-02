@@ -147,11 +147,12 @@ async def get_analytics_dashboard(current_user: CurrentUser, session: DbSession,
         start_date_naive = datetime.utcnow() - timedelta(days=days)
         
         # Calculate revenue, ADR, RevPAR, Occupancy
+        from sqlalchemy.orm import selectinload
         bookings_q = select(Booking).where(
             Booking.hotel_id == hotel_id,
             Booking.created_at >= start_date_naive,
             Booking.status != BookingStatus.CANCELLED
-        )
+        ).options(selectinload(Booking.guest))
         res_bookings = await session.execute(bookings_q)
         bookings = res_bookings.scalars().all()
 
@@ -344,8 +345,8 @@ async def get_analytics_dashboard(current_user: CurrentUser, session: DbSession,
         # AI Revenue Attribution (Bookings that came from leads)
         # We check if a booking email matches a lead email in this period
         lead_emails = {l.guest_email.lower() for l in leads if l.guest_email}
-        ai_revenue = sum(b.total_amount for b in bookings if b.guest_email and b.guest_email.lower() in lead_emails)
-        ai_assisted_bookings = len([b for b in bookings if b.guest_email and b.guest_email.lower() in lead_emails])
+        ai_revenue = sum(b.total_amount for b in bookings if b.guest and b.guest.email and b.guest.email.lower() in lead_emails)
+        ai_assisted_bookings = len([b for b in bookings if b.guest and b.guest.email and b.guest.email.lower() in lead_emails])
 
         return {
             "total_visitors": total_visitors,
