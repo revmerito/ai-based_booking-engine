@@ -241,19 +241,19 @@ export function AppHeader() {
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigate('/profile')}>
+            <DropdownMenuItem onSelect={() => navigate('/profile')}>
               Profile Settings
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate('/settings?tab=notifications')}>
+            <DropdownMenuItem onSelect={() => navigate('/settings?tab=notifications')}>
               Notification Preferences
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setIsHelpOpen(true)}>
+            <DropdownMenuItem onSelect={() => setIsHelpOpen(true)}>
               Help & Support
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-destructive focus:text-destructive"
-              onClick={logout}
+              onSelect={logout}
             >
               Sign Out
             </DropdownMenuItem>

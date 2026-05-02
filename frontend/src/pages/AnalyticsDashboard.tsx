@@ -43,6 +43,12 @@ interface AnalyticsData {
   ai_assisted_bookings?: number;
   popular_questions?: { text: string; value: number }[];
   total_leads?: number;
+
+  // Advanced BI fields
+  revenue_by_room_type?: { name: string; value: number }[];
+  booking_window_data?: { window: string; count: number }[];
+  occupancy_forecast?: { date: string; occupancy: number }[];
+  pickup_stats?: { today: number; yesterday: number; trend: 'up' | 'down' };
 }
 
 interface LiveEvent {
@@ -609,9 +615,129 @@ export const AnalyticsDashboard: React.FC = () => {
           </div>
         </div>
       </div>
+      {/* Predictive Intelligence & Revenue Mix */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Occupancy Forecast */}
+        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">7-Day Occupancy Forecast</h2>
+              <p className="text-xs text-gray-500">Predicted occupancy based on confirmed bookings</p>
+            </div>
+            <Calendar className="w-5 h-5 text-indigo-500" />
+          </div>
+          <div className="h-[250px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={data.occupancy_forecast}>
+                <defs>
+                  <linearGradient id="colorOcc" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.1}/>
+                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{fontSize: 10, fill: '#64748b'}} />
+                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fill: '#64748b'}} unit="%" />
+                <Tooltip 
+                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                  formatter={(value) => [`${value}%`, 'Occupancy']}
+                />
+                <Area type="monotone" dataKey="occupancy" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorOcc)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Revenue Mix - Pie Chart */}
+        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+          <div className="flex items-center justify-between mb-6">
+             <h2 className="text-lg font-semibold text-gray-900">Revenue Mix by Room Type</h2>
+             <PieIcon className="w-5 h-5 text-emerald-500" />
+          </div>
+          <div className="h-[250px] w-full flex items-center">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={data.revenue_by_room_type}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {data.revenue_by_room_type?.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                   formatter={(value: number) => `₹${value.toLocaleString()}`}
+                />
+                <Legend verticalAlign="bottom" height={36}/>
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Booking Window Analysis */}
+        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Booking Window Distribution</h2>
+              <p className="text-xs text-gray-500">How far in advance guests are booking</p>
+            </div>
+            <Clock className="w-5 h-5 text-slate-400" />
+          </div>
+          <div className="h-[250px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={data.booking_window_data}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="window" axisLine={false} tickLine={false} tick={{fontSize: 10, fill: '#64748b'}} />
+                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fill: '#64748b'}} />
+                <Tooltip 
+                  cursor={{fill: '#f8fafc'}}
+                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                />
+                <Bar dataKey="count" fill="#0ea5e9" radius={[4, 4, 0, 0]} barSize={40} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Daily Pickup & Trend */}
+        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-center">
+           <div className="text-center space-y-4">
+              <div className="inline-flex p-4 bg-emerald-50 text-emerald-600 rounded-full mb-4">
+                <TrendingUp className="w-8 h-8" />
+              </div>
+              <h2 className="text-2xl font-black text-slate-900">Booking Pickup</h2>
+              <p className="text-slate-500 text-sm max-w-xs mx-auto">New bookings confirmed today vs yesterday</p>
+              
+              <div className="flex items-center justify-center gap-8 mt-6">
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase">Today</p>
+                  <p className="text-3xl font-black text-slate-900">{data.pickup_stats?.today || 0}</p>
+                </div>
+                <div className="h-12 w-[1px] bg-slate-100" />
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase">Yesterday</p>
+                  <p className="text-3xl font-black text-slate-400">{data.pickup_stats?.yesterday || 0}</p>
+                </div>
+              </div>
+
+              <div className={`mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold ${data.pickup_stats?.trend === 'up' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+                {data.pickup_stats?.trend === 'up' ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
+                {data.pickup_stats?.trend === 'up' ? 'Growth in Daily Pace' : 'Slow Daily Pace'}
+              </div>
+           </div>
+        </div>
+      </div>
     </div>
   );
 };
+
 
 const StatCard: React.FC<{ 
   title: string; 

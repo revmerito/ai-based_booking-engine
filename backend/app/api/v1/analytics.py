@@ -314,7 +314,57 @@ async def get_analytics_dashboard(current_user: CurrentUser, session: DbSession,
                     "visitors": heatmap_data.get(k, 0)
                 })
 
-        # --- AI & LEAD INSIGHTS ---
+        # --- ADVANCED BUSINESS INTELLIGENCE ---
+        
+        # 1. Revenue by Room Type (Pie Chart Data)
+        room_revenue_map = {r.name: 0 for r in room_types}
+        for b in bookings:
+            for rm in b.rooms:
+                name = rm.get("room_type_name")
+                if name in room_revenue_map:
+                    room_revenue_map[name] += rm.get("total_price", 0)
+        revenue_by_room_type = [{"name": k, "value": v} for k, v in room_revenue_map.items() if v > 0]
+
+        # 2. Booking Window Distribution (How many days in advance)
+        window_buckets = {"0-3 days": 0, "4-7 days": 0, "8-14 days": 0, "15-30 days": 0, "30+ days": 0}
+        for b in bookings:
+            days_diff = (b.check_in - b.created_at.date()).days
+            if days_diff <= 3: window_buckets["0-3 days"] += 1
+            elif days_diff <= 7: window_buckets["4-7 days"] += 1
+            elif days_diff <= 14: window_buckets["8-14 days"] += 1
+            elif days_diff <= 30: window_buckets["15-30 days"] += 1
+            else: window_buckets["30+ days"] += 1
+        booking_window_data = [{"window": k, "count": v} for k, v in window_buckets.items()]
+
+        # 3. Occupancy Forecast (Next 7 Days)
+        # Fetch all future bookings
+        future_q = select(Booking).where(
+            Booking.hotel_id == hotel_id,
+            Booking.check_out >= datetime.utcnow().date(),
+            Booking.status != BookingStatus.CANCELLED
+        )
+        res_future = await session.execute(future_q)
+        future_bookings = res_future.scalars().all()
+        
+        forecast_data = []
+        for i in range(7):
+            d = (datetime.utcnow() + timedelta(days=i)).date()
+            rooms_occupied = 0
+            for b in future_bookings:
+                if b.check_in <= d < b.check_out:
+                    rooms_occupied += len(b.rooms)
+            
+            occ_pct = round((rooms_occupied / total_inventory * 100), 2) if total_inventory > 0 else 0
+            forecast_data.append({"date": d.strftime("%m/%d"), "occupancy": occ_pct})
+
+        # 4. Daily Pickup (Bookings created today vs yesterday)
+        today = datetime.utcnow().date()
+        yesterday = today - timedelta(days=1)
+        pickup_today = len([b for b in bookings if b.created_at.date() == today])
+        pickup_yesterday = len([b for b in bookings if b.created_at.date() == yesterday])
+        pickup_trend = "up" if pickup_today >= pickup_yesterday else "down"
+
+        # AI & LEAD INSIGHTS
         from app.models.lead import Lead
         leads_q = select(Lead).where(
             Lead.hotel_id == hotel_id,
@@ -374,7 +424,17 @@ async def get_analytics_dashboard(current_user: CurrentUser, session: DbSession,
             "ai_revenue": ai_revenue,
             "ai_assisted_bookings": ai_assisted_bookings,
             "popular_questions": popular_questions,
-            "total_leads": total_leads
+            "total_leads": total_leads,
+
+            # NEW: Advanced BI Fields
+            "revenue_by_room_type": revenue_by_room_type,
+            "booking_window_data": booking_window_data,
+            "occupancy_forecast": forecast_data,
+            "pickup_stats": {
+                "today": pickup_today,
+                "yesterday": pickup_yesterday,
+                "trend": pickup_trend
+            }
         }
 
     except Exception as e:
