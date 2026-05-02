@@ -10,8 +10,9 @@ import {
   Smartphone, Monitor, Globe, 
   TrendingUp, TrendingDown, Layout,
   DollarSign, PieChart as PieIcon, Calendar, Download,
-  Activity, ArrowUpRight, ArrowDownRight, Zap
+  Activity, ArrowUpRight, ArrowDownRight, Zap, MessageCircle
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface AnalyticsData {
   total_visitors: number;

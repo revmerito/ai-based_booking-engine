@@ -330,11 +330,14 @@ async def get_analytics_dashboard(current_user: CurrentUser, session: DbSession,
         questions_map = {}
         stop_words = {"i", "want", "to", "book", "a", "the", "room", "for", "is", "of", "and", "in", "it", "can", "have", "you", "my", "hi", "hello"}
         for lead in leads:
-            if lead.message:
-                words = lead.message.lower().split()
+            source_text = lead.ai_conversation_summary or ""
+            if source_text:
+                words = source_text.lower().split()
                 for w in words:
-                    if len(w) > 3 and w not in stop_words:
-                        questions_map[w] = questions_map.get(w, 0) + 1
+                    # Clean words and filter
+                    clean_w = ''.join(e for e in w if e.isalnum())
+                    if len(clean_w) > 3 and clean_w not in stop_words:
+                        questions_map[clean_w] = questions_map.get(clean_w, 0) + 1
         
         popular_questions = sorted([{"text": k, "value": v} for k, v in questions_map.items()], key=lambda x: x["value"], reverse=True)[:10]
 
