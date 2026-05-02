@@ -270,10 +270,15 @@ def create_guest_agent_graph(
         from langchain_openai import ChatOpenAI
         
         # Determine Base URL based on provider if not explicitly provided
+        # Auto-detect Groq if key starts with gsk_ but provider is missing
+        effective_provider = ai_provider
+        if not effective_provider and target_api_key.startswith("gsk_"):
+            effective_provider = "groq"
+
         default_base_url = None
-        if ai_provider == "groq":
+        if effective_provider == "groq":
             default_base_url = "https://api.groq.com/openai/v1"
-        elif ai_provider == "openai":
+        elif effective_provider == "openai":
             default_base_url = None # Use default OpenAI URL
         
         # If no model is provided, we CANNOT initialize (Zero hardcoding)

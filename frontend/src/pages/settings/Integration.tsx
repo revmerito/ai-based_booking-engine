@@ -7,7 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Copy, Key, Code, Webhook, Globe, Plus, Trash2, Eye, EyeOff, Search, MessageCircle, Sparkles } from 'lucide-react';
+import { Copy, Key, Code, Webhook, Globe, Plus, Trash2, Eye, EyeOff, Search, MessageCircle, Sparkles, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiClient } from '@/api/client';
 
@@ -55,6 +55,7 @@ const IntegrationPage = () => {
     const [showNewKeyDialog, setShowNewKeyDialog] = useState(false);
     const [newKeyName, setNewKeyName] = useState('');
     const [createdKey, setCreatedKey] = useState<CreatedKey | null>(null);
+    const [testingAI, setTestingAI] = useState(false);
     const [previewHeight, setPreviewHeight] = useState(160);
 
     // Mobile Menu State
@@ -142,6 +143,22 @@ const IntegrationPage = () => {
             toast.success('Settings updated successfully');
         } catch (error) {
             toast.error('Failed to update settings');
+        }
+    };
+
+    const testAI = async () => {
+        setTestingAI(true);
+        try {
+            const res = await apiClient.post<any>('/integration/test-ai');
+            if (res.status === 'success') {
+                toast.success(res.message);
+            } else {
+                toast.error(res.message);
+            }
+        } catch (error) {
+            toast.error('Test failed. Check your API key and network.');
+        } finally {
+            setTestingAI(false);
         }
     };
 
@@ -699,6 +716,22 @@ const IntegrationPage = () => {
                                                 <p className="text-[10px] text-muted-foreground mt-1">
                                                     Use for OpenRouter, local models (LM Studio/Ollama), or proxies.
                                                 </p>
+                                            </div>
+
+                                            <div className="pt-2">
+                                                <Button 
+                                                    className="w-full gap-2" 
+                                                    variant="secondary"
+                                                    onClick={testAI}
+                                                    disabled={testingAI || !settings.ai_api_key}
+                                                >
+                                                    {testingAI ? (
+                                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                                    ) : (
+                                                        <Sparkles className="h-4 w-4" />
+                                                    )}
+                                                    {testingAI ? 'Testing...' : 'Test AI Connection'}
+                                                </Button>
                                             </div>
                                         </div>
                                     </div>

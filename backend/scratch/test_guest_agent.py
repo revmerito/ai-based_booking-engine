@@ -12,52 +12,27 @@ from app.models.hotel import Hotel
 from app.models.integration import IntegrationSettings
 
 async def test_live_agent():
-    print("Testing Guest Agent with DB Settings...")
+    print("Testing ALL Hotels AI Settings...")
     async with async_session_maker() as session:
-        # Get first hotel
-        res = await session.execute(select(Hotel).limit(1))
-        hotel = res.scalars().first()
-        if not hotel:
-            print("No hotel found.")
-            return
-
-        # Get integration settings
-        int_res = await session.execute(select(IntegrationSettings).where(IntegrationSettings.hotel_id == hotel.id))
-        integration = int_res.scalar_one_or_none()
+        # Get all hotels
+        res = await session.execute(select(Hotel))
+        hotels = res.scalars().all()
         
-        if not integration:
-            print("No integration settings found for this hotel.")
-            return
+        for hotel in hotels:
+            print("-" * 30)
+            print(f"Hotel: {hotel.name} (Slug: {hotel.slug})")
+            print(f"Provider: {hotel.ai_provider}")
+            print(f"Model: {hotel.ai_model}")
+            print(f"Has API Key: {bool(hotel.ai_api_key)}")
             
-        print(f"Hotel: {hotel.name}")
-        print(f"Provider: {integration.ai_provider}")
-        print(f"Model: {integration.ai_model}")
-        print(f"Has API Key: {bool(integration.ai_api_key)}")
-        print(f"Base URL: {integration.ai_base_url}")
-
-        try:
-            agent = create_guest_agent_graph(
-                session, 
-                hotel.id, 
-                integration.ai_provider,
-                integration.ai_api_key,
-                integration.ai_model,
-                integration.ai_base_url
-            )
-            
-            if not agent:
-                print("Agent failed to initialize (returned None).")
-                return
-                
-            print("Graph created successfully!")
-            from langchain_core.messages import HumanMessage
-            response = await agent.ainvoke({"messages": [HumanMessage(content="hello")]})
-            print(f"Response received: {response['messages'][-1].content}")
-            
-        except Exception as e:
-            print(f"Error: {e}")
-            import traceback
-            traceback.print_exc()
+            # Get integration settings for detailed check
+            int_res = await session.execute(select(IntegrationSettings).where(IntegrationSettings.hotel_id == hotel.id))
+            integration = int_res.scalar_one_or_none()
+            if integration:
+                print(f"Integration Model: {integration.ai_model}")
+                print(f"Integration Key: {bool(integration.ai_api_key)}")
+            else:
+                print("No integration settings found.")
 
 if __name__ == "__main__":
     asyncio.run(test_live_agent())

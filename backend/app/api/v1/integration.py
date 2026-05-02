@@ -412,3 +412,42 @@ async def test_webhook(
         "http_status": status_code,
         "note": "Check your webhook endpoint for the test event"
     }
+
+@router.post("/test-ai")
+async def test_ai_connection(
+    current_user: CurrentUser,
+    session: DbSession
+):
+    """Test AI credentials by sending a simple prompt"""
+    from app.core.guest_agent import create_guest_agent_graph
+    
+    # Get settings
+    query = select(IntegrationSettings).where(IntegrationSettings.hotel_id == current_user.hotel_id)
+    res = await session.execute(query)
+    settings = res.scalar_one_or_none()
+    
+    if not settings or not settings.ai_api_key:
+        return {"status": "error", "message": "API Key is missing."}
+        
+    try:
+        agent = create_guest_agent_graph(
+            session, 
+            current_user.hotel_id,
+            settings.ai_provider,
+            settings.ai_api_key,
+            settings.ai_model,
+            settings.ai_base_url
+        )
+        
+        if not agent:
+            return {"status": "error", "message": "Agent failed to initialize. Check your Model ID."}
+            
+        from langchain_core.messages import HumanMessage
+        # Use short timeout for testing
+        response = await agent.ainvoke({"messages": [HumanMessage(content="Respond with 'Ready' only.")]})
+        ai_msg = response["messages"][-1].content
+        
+        return {"status": "success", "message": f"Connection Successful! AI says: {ai_msg}"}
+        
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
