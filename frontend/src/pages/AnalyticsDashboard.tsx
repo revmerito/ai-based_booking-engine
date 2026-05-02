@@ -35,6 +35,13 @@ interface AnalyticsData {
   promo_stats?: { code: string; bookings: number }[];
   traffic_heatmap?: { weekday: number; hour: number; visitors: number }[];
   commission_saved?: number;
+
+  // New AI fields
+  ai_resolution_rate?: number;
+  ai_revenue?: number;
+  ai_assisted_bookings?: number;
+  popular_questions?: { text: string; value: number }[];
+  total_leads?: number;
 }
 
 interface LiveEvent {
@@ -142,6 +149,34 @@ export const AnalyticsDashboard: React.FC = () => {
     return labels[stage] || stage;
   };
 
+  const handleExport = () => {
+    if (!data) return;
+    
+    // Prepare simple CSV
+    const rows = [
+      ["Metric", "Value"],
+      ["Total Visitors", data.total_visitors],
+      ["Total Conversions", data.total_conversions],
+      ["Conversion Rate (%)", data.conversion_rate],
+      ["Total Revenue (INR)", data.revenue_total],
+      ["AI Assisted Revenue", data.ai_revenue],
+      ["Total Leads Generated", data.total_leads],
+      ["Direct Commission Saved", data.commission_saved]
+    ];
+    
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + rows.map(e => e.join(",")).join("\n");
+      
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `analytics_export_${days}d.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Analytics exported successfully");
+  };
+
   if (loading) return <div className="p-8 flex justify-center items-center h-full"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div></div>;
   if (error) return <div className="p-8 text-center text-red-500 bg-red-50 rounded-xl m-8 border border-red-100">Error: {error}</div>;
   if (!data) return <div className="p-8 text-center text-gray-500">No data received from server.</div>;
@@ -178,7 +213,7 @@ export const AnalyticsDashboard: React.FC = () => {
               30D
             </button>
           </div>
-          <Button variant="outline" size="sm" className="gap-2 border-slate-200">
+          <Button variant="outline" size="sm" className="gap-2 border-slate-200" onClick={handleExport}>
             <Download className="w-4 h-4" />
             Export
           </Button>
@@ -198,6 +233,14 @@ export const AnalyticsDashboard: React.FC = () => {
           value={`₹${(data.commission_saved || 0).toLocaleString()}`} 
           icon={<MousePointerClick className="w-6 h-6 text-indigo-600" />}
           description="Commission saved vs OTAs"
+        />
+        <StatCard 
+          title="AI Revenue" 
+          value={`₹${(data.ai_revenue || 0).toLocaleString()}`} 
+          icon={<Zap className="w-6 h-6 text-amber-500" />}
+          description="Bookings assisted by AI"
+          trend={`${data.ai_assisted_bookings || 0} bookings`}
+          trendUp={true}
         />
         <StatCard 
           title="Conversion" 
@@ -453,6 +496,64 @@ export const AnalyticsDashboard: React.FC = () => {
                 <p className="text-xs text-slate-400">Not enough conversions.</p>
               )}
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* AI Performance & Guest Insights */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-1 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-semibold text-gray-900">AI Efficiency</h2>
+            <Activity className="w-5 h-5 text-amber-500" />
+          </div>
+          <div className="space-y-6">
+            <div className="flex flex-col items-center justify-center py-6 bg-slate-50 rounded-2xl border border-slate-100">
+               <span className="text-4xl font-black text-slate-900">{data.ai_resolution_rate}%</span>
+               <span className="text-xs font-bold text-slate-400 uppercase mt-2">Chat Resolution Rate</span>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-4 bg-blue-50 rounded-xl">
+                <p className="text-[10px] font-bold text-blue-600 uppercase">Total Leads</p>
+                <p className="text-xl font-black text-blue-900">{data.total_leads || 0}</p>
+              </div>
+              <div className="p-4 bg-amber-50 rounded-xl">
+                <p className="text-[10px] font-bold text-amber-600 uppercase">AI Bookings</p>
+                <p className="text-xl font-black text-amber-900">{data.ai_assisted_bookings || 0}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Popular Guest Inquiries</h2>
+              <p className="text-xs text-gray-500">What guests are asking the AI most frequently</p>
+            </div>
+            <MessageCircle className="w-5 h-5 text-blue-500" />
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {data.popular_questions && data.popular_questions.length > 0 ? data.popular_questions.map((q, idx) => (
+              <div 
+                key={idx}
+                className="px-4 py-2 bg-slate-50 border border-slate-100 rounded-full flex items-center gap-2 hover:bg-blue-600 hover:text-white hover:border-blue-700 transition-all cursor-default group"
+              >
+                <span className="text-sm font-bold">{q.text}</span>
+                <span className="text-[10px] font-black px-1.5 py-0.5 bg-slate-200 text-slate-600 rounded-md group-hover:bg-white group-hover:text-blue-600">
+                  {q.value}
+                </span>
+              </div>
+            )) : (
+              <div className="w-full py-12 text-center text-gray-400 italic">
+                AI hasn't collected enough inquiries yet.
+              </div>
+            )}
+          </div>
+          <div className="mt-8 p-4 bg-blue-50 rounded-xl border border-blue-100">
+            <p className="text-xs text-blue-700 font-medium">
+              💡 **Pro Tip:** Use these insights to update your room descriptions or add FAQs to the dashboard.
+            </p>
           </div>
         </div>
       </div>

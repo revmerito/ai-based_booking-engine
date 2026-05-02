@@ -313,6 +313,37 @@ async def get_analytics_dashboard(current_user: CurrentUser, session: DbSession,
                     "visitors": heatmap_data.get(k, 0)
                 })
 
+        # --- AI & LEAD INSIGHTS ---
+        from app.models.lead import Lead
+        leads_q = select(Lead).where(
+            Lead.hotel_id == hotel_id,
+            Lead.created_at >= start_date_naive
+        )
+        res_leads = await session.execute(leads_q)
+        leads = res_leads.scalars().all()
+        
+        total_leads = len(leads)
+        ai_resolved_chats = total_leads # Assuming every lead is a chat session for now
+        ai_resolution_rate = round((ai_resolved_chats / total_visitors * 100), 2) if total_visitors > 0 else 0
+        
+        # Extract keywords/popular questions from lead messages
+        questions_map = {}
+        stop_words = {"i", "want", "to", "book", "a", "the", "room", "for", "is", "of", "and", "in", "it", "can", "have", "you", "my", "hi", "hello"}
+        for lead in leads:
+            if lead.message:
+                words = lead.message.lower().split()
+                for w in words:
+                    if len(w) > 3 and w not in stop_words:
+                        questions_map[w] = questions_map.get(w, 0) + 1
+        
+        popular_questions = sorted([{"text": k, "value": v} for k, v in questions_map.items()], key=lambda x: x["value"], reverse=True)[:10]
+
+        # AI Revenue Attribution (Bookings that came from leads)
+        # We check if a booking email matches a lead email in this period
+        lead_emails = {l.email.lower() for l in leads if l.email}
+        ai_revenue = sum(b.total_amount for b in bookings if b.guest_email and b.guest_email.lower() in lead_emails)
+        ai_assisted_bookings = len([b for b in bookings if b.guest_email and b.guest_email.lower() in lead_emails])
+
         return {
             "total_visitors": total_visitors,
             "avg_time_spent_seconds": avg_time,
@@ -332,12 +363,21 @@ async def get_analytics_dashboard(current_user: CurrentUser, session: DbSession,
             "funnel_dropoffs": funnel_dropoffs,
             "promo_stats": promo_stats,
             "traffic_heatmap": heatmap_list,
-            "commission_saved": round(revenue_total * 0.15, 2)
+            "commission_saved": round(revenue_total * 0.15, 2),
+            
+            # New AI Fields
+            "ai_resolution_rate": ai_resolution_rate,
+            "ai_revenue": ai_revenue,
+            "ai_assisted_bookings": ai_assisted_bookings,
+            "popular_questions": popular_questions,
+            "total_leads": total_leads
         }
 
     except Exception as e:
         import logging
         logging.error(f"Analytics Error: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/live/active")
