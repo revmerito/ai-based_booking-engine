@@ -343,7 +343,7 @@ async def get_analytics_dashboard(current_user: CurrentUser, session: DbSession,
 
         # AI Revenue Attribution (Bookings that came from leads)
         # We check if a booking email matches a lead email in this period
-        lead_emails = {l.email.lower() for l in leads if l.email}
+        lead_emails = {l.guest_email.lower() for l in leads if l.guest_email}
         ai_revenue = sum(b.total_amount for b in bookings if b.guest_email and b.guest_email.lower() in lead_emails)
         ai_assisted_bookings = len([b for b in bookings if b.guest_email and b.guest_email.lower() in lead_emails])
 
