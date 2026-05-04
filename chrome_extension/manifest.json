@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Staybooker Companion",
-    "version": "2.2",
+    "version": "2.5",
     "description": "Secure Distributed Rate Scraping Client for Staybooker",
     "permissions": [
         "activeTab",
@@ -12,6 +12,7 @@
     ],
     "host_permissions": [
         "https://www.makemytrip.com/*",
+        "https://www.goibibo.com/*",
         "https://www.agoda.com/*",
         "https://ycs.agoda.com/*",
         "http://localhost:*/*",
