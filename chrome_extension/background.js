@@ -125,11 +125,21 @@ function executeRateScrapeJob(comp, isFirst = false) {
             }
         };
 
-        const finish = (data) => {
-            if (isResolved) return;
-            isResolved = true;
+        const finish = (result) => {
+            if (isFinished) return;
+            isFinished = true;
             cleanup();
-            resolve(data);
+            resolve(result);
+            
+            // Notify all tabs that this specific job is done
+            chrome.tabs.query({}, (tabs) => {
+                tabs.forEach(tab => {
+                    chrome.tabs.sendMessage(tab.id, { 
+                        action: "SCRAPE_COMPLETE", 
+                        data: { competitor_id: comp.id, status: result.error ? "FAILED" : "SUCCESS" }
+                    }).catch(() => {}); // Ignore errors for inactive tabs
+                });
+            });
         };
 
         const onMsg = (msg, sender) => {
@@ -159,8 +169,10 @@ function executeRateScrapeJob(comp, isFirst = false) {
 
         showNotification("Syncing Rates", `Opening ${comp.name}...`);
 
+        // Try to create the tab
         try {
-            chrome.tabs.create({ url: targetUrl, active: true }, (tab) => {
+            // SILENT MODE: Open in background (active: false)
+            chrome.tabs.create({ url: targetUrl, active: false }, (tab) => {
                 if (chrome.runtime.lastError || !tab) {
                     console.error("[Job] Tab creation failed:", chrome.runtime.lastError);
                     showNotification("Error", "Failed to open browser tab.");

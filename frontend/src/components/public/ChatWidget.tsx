@@ -31,15 +31,35 @@ function getContrastText(hexcolor: string) {
     }
 }
 
-export function ChatWidget({ hotelSlug, primaryColor = '#3B82F6' }: ChatWidgetProps) {
+export function ChatWidget({ hotelSlug, primaryColor: initialPrimaryColor = '#3B82F6' }: ChatWidgetProps) {
     const [isOpen, setIsOpen] = useState(false);
-    const [messages, setMessages] = useState<Message[]>([
-        { role: 'assistant', content: 'Hello! I am your concierge. How can I assist you with your stay today?' }
-    ]);
+    const [hotelInfo, setHotelInfo] = useState<{ name: string, primary_color: string } | null>(null);
+    const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isVisible, setIsVisible] = useState(true);
     const scrollRef = useRef<HTMLDivElement>(null);
+
+    const primaryColor = hotelInfo?.primary_color || initialPrimaryColor;
+
+    // Fetch Hotel Config
+    useEffect(() => {
+        const fetchConfig = async () => {
+            try {
+                const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8001/api/v1'}/public/hotels/slug/${hotelSlug}/widget-config`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setHotelInfo({ name: data.hotel_name, primary_color: data.primary_color });
+                    setMessages([{ role: 'assistant', content: `Hello! I am the virtual concierge for ${data.hotel_name}. How can I assist you today?` }]);
+                } else {
+                    setMessages([{ role: 'assistant', content: 'Hello! How can I assist you with your stay today?' }]);
+                }
+            } catch (e) {
+                setMessages([{ role: 'assistant', content: 'Hello! How can I assist you with your stay today?' }]);
+            }
+        };
+        fetchConfig();
+    }, [hotelSlug]);
 
     // Auto-scroll to bottom
     useEffect(() => {
@@ -103,20 +123,22 @@ export function ChatWidget({ hotelSlug, primaryColor = '#3B82F6' }: ChatWidgetPr
                             <CardHeader
                                 className="flex flex-row items-center justify-between p-4 shadow-xl relative z-10 shrink-0"
                                 style={{
-                                    background: 'linear-gradient(135deg, #4f46e5, #3730a3)',
+                                    background: `linear-gradient(135deg, ${primaryColor}, ${primaryColor}dd)`,
                                     borderBottom: '1px solid rgba(255,255,255,0.1)',
                                     minHeight: '70px'
                                 }}
                             >
                                 <div className="flex items-center gap-3">
-                                    <div className="bg-white/20 p-2 rounded-2xl backdrop-blur-md border border-white/20 shadow-lg flex items-center justify-center w-11 h-11">
-                                        <img src="/webmerito-icon.png" alt="Logo" className="w-6 h-6 object-contain" />
+                                    <div className="bg-white/20 p-2 rounded-2xl backdrop-blur-md border border-white/20 shadow-lg flex items-center justify-center w-11 h-11 text-white">
+                                        <Bot className="w-6 h-6" />
                                     </div>
                                     <div className="flex flex-col justify-center">
-                                        <span className="text-[16px] font-extrabold text-white leading-tight tracking-tight">Saaraa AI</span>
+                                        <span className="text-[16px] font-extrabold text-white leading-tight tracking-tight max-w-[180px] truncate">
+                                            {hotelInfo?.name || 'Concierge'}
+                                        </span>
                                         <div className="flex items-center gap-1.5 mt-1">
                                             <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-[0_0_10px_rgba(74,222,128,0.8)]" />
-                                            <span className="text-[11px] font-bold text-indigo-100/80 uppercase tracking-widest leading-none">Concierge Active</span>
+                                            <span className="text-[11px] font-bold text-white/70 uppercase tracking-widest leading-none">Online Now</span>
                                         </div>
                                     </div>
                                 </div>
@@ -319,7 +341,7 @@ export function ChatWidget({ hotelSlug, primaryColor = '#3B82F6' }: ChatWidgetPr
                                         WebkitBackgroundClip: 'text',
                                         color: 'transparent'
                                     } as any}>
-                                        Hi, I'm Saaraa!
+                                        How can I help?
                                     </span>
                                 </div>
                             </>

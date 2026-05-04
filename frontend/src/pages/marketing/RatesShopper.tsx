@@ -62,6 +62,15 @@ export default function RatesShopper() {
 
     useEffect(() => {
         fetchData();
+
+        // Real-time listener for extension updates
+        const onScrapeComplete = () => {
+            console.log("Scrape complete detected, refreshing UI...");
+            fetchData();
+        };
+
+        window.addEventListener("SCRAPE_COMPLETE" as any, onScrapeComplete);
+        return () => window.removeEventListener("SCRAPE_COMPLETE" as any, onScrapeComplete);
     }, [startDate]); // Refetch when date changes
 
     const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
