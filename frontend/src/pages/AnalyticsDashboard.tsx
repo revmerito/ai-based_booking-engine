@@ -21,7 +21,7 @@ interface AnalyticsData {
   conversion_rate: number;
   device_stats: { type: string; count: number }[];
   top_rooms: { id: string; name?: string; views: number }[];
-  chart_data: { date: string; visitors: number; revenue?: number; adr?: number; revpar?: number }[];
+  chart_data: { date: string; visitors: number; revenue?: number; occupancy?: number }[];
   funnel_data: { stage: string; count: number }[];
   revenue_total: number;
   avg_daily_rate: number;
@@ -36,9 +36,6 @@ interface AnalyticsData {
   promo_stats?: { code: string; bookings: number }[];
   traffic_heatmap?: { weekday: number; hour: number; visitors: number }[];
   commission_saved?: number;
-  alos?: number;
-  cancellation_rate?: number;
-  avg_lead_time?: number;
 
   // New AI fields
   ai_resolution_rate?: number;
@@ -192,498 +189,554 @@ export const AnalyticsDashboard: React.FC = () => {
   if (!data) return <div className="p-8 text-center text-gray-500">No data received from server.</div>;
 
   return (
-    <div className="p-4 md:p-8 max-w-[1600px] mx-auto space-y-8 animate-in fade-in duration-1000 bg-[#f8fafc]">
-      {/* Header Section with Glassmorphism */}
-      <div className="relative overflow-hidden bg-white/40 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/60 shadow-2xl shadow-blue-500/5">
-        <div className="absolute top-[-20%] right-[-10%] w-[40%] h-[150%] bg-blue-500/10 blur-[100px] rounded-full" />
-        <div className="absolute bottom-[-20%] left-[-10%] w-[30%] h-[150%] bg-emerald-500/10 blur-[100px] rounded-full" />
-        
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-blue-600 rounded-xl shadow-lg shadow-blue-200">
-                <BarChart3 className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-sm font-bold text-blue-600 tracking-wider uppercase">Executive Overview</span>
+    <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-700">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Analytics Dashboard</h1>
+          <p className="text-gray-500 mt-1">Real-time insights from your booking widget</p>
+        </div>
+        <div className="flex items-center gap-3">
+          {switching && (
+            <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 animate-pulse">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-slate-600" />
+              Updating...
             </div>
-            <h1 className="text-4xl font-black text-slate-900 tracking-tight">Advanced BI Dashboard</h1>
-            <p className="text-slate-500 mt-2 font-medium flex items-center gap-2">
-              <Globe className="w-4 h-4" /> Global guest insights & revenue intelligence
-            </p>
+          )}
+          <div className="hidden md:flex items-center gap-2 bg-emerald-50 text-emerald-700 px-4 py-2 rounded-full border border-emerald-100 animate-pulse">
+            <Activity className="w-4 h-4" />
+            <span className="text-sm font-semibold">{activeUsers} Live Visitors</span>
           </div>
-
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-3 bg-white/80 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/50 shadow-sm">
-              <div className="relative">
-                <Activity className="w-5 h-5 text-emerald-500 animate-pulse" />
-                <span className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-500 rounded-full animate-ping" />
-              </div>
-              <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase leading-none">Live Now</p>
-                <p className="text-lg font-black text-slate-900 leading-none mt-1">{activeUsers} Visitors</p>
-              </div>
-            </div>
-
-            <div className="flex bg-white/80 backdrop-blur-md p-1.5 rounded-2xl border border-white/50 shadow-sm">
-              {[7, 30, 90].map((d) => (
-                <button
-                  key={d}
-                  onClick={() => setDays(d)}
-                  className={`px-6 py-2 text-sm font-bold rounded-xl transition-all duration-300 ${
-                    days === d 
-                      ? 'bg-slate-900 text-white shadow-lg' 
-                      : 'text-slate-500 hover:text-slate-900 hover:bg-white'
-                  }`}
-                >
-                  {d}D
-                </button>
-              ))}
-            </div>
-
-            <Button 
-              variant="outline" 
-              className="rounded-2xl h-12 px-6 gap-2 border-slate-200 bg-white shadow-sm hover:shadow-md transition-all active:scale-95"
-              onClick={handleExport}
+          <div className="flex items-center gap-2 bg-white p-1 rounded-lg border shadow-sm">
+            <button 
+              onClick={() => setDays(7)}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${days === 7 ? 'bg-blue-50 text-blue-700 border-blue-100' : 'text-gray-600 hover:bg-gray-50'}`}
             >
-              <Download className="w-4 h-4" />
-              <span className="font-bold">Export Report</span>
-            </Button>
+              7D
+            </button>
+            <button 
+              onClick={() => setDays(30)}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${days === 30 ? 'bg-blue-50 text-blue-700 border-blue-100' : 'text-gray-600 hover:bg-gray-50'}`}
+            >
+              30D
+            </button>
+          </div>
+          <Button variant="outline" size="sm" className="gap-2 border-slate-200" onClick={handleExport}>
+            <Download className="w-4 h-4" />
+            Export
+          </Button>
+        </div>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+        <StatCard 
+          title="Total Revenue" 
+          value={`₹${(data.revenue_total || 0).toLocaleString()}`} 
+          icon={<DollarSign className="w-6 h-6 text-emerald-600" />}
+          description="Gross earnings this period"
+        />
+        <StatCard 
+          title="Direct Saver" 
+          value={`₹${(data.commission_saved || 0).toLocaleString()}`} 
+          icon={<MousePointerClick className="w-6 h-6 text-indigo-600" />}
+          description="Commission saved vs OTAs"
+        />
+        <StatCard 
+          title="AI Revenue" 
+          value={`₹${(data.ai_revenue || 0).toLocaleString()}`} 
+          icon={<Zap className="w-6 h-6 text-amber-500" />}
+          description="Bookings assisted by AI"
+          trend={`${data.ai_assisted_bookings || 0} bookings`}
+          trendUp={true}
+        />
+        <StatCard 
+          title="Conversion" 
+          value={`${data.conversion_rate || 0}%`} 
+          icon={<Zap className="w-6 h-6 text-yellow-600" />}
+          description="Look-to-book ratio"
+        />
+        <StatCard 
+          title="ADR" 
+          value={`₹${(data.avg_daily_rate || 0).toLocaleString()}`} 
+          icon={<ArrowUpRight className="w-6 h-6 text-blue-600" />}
+          description="Average Daily Rate"
+        />
+        <StatCard 
+          title="Occupancy" 
+          value={`${data.occupancy_rate || 0}%`} 
+          icon={<Calendar className="w-6 h-6 text-purple-600" />}
+          description="Rooms booked vs total"
+        />
+      </div>
+
+      {/* Main Charts Row */}
+      <div className="w-full bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Revenue & Traffic</h2>
+            <p className="text-xs text-gray-500">Performance correlation over time</p>
+          </div>
+          <div className="flex items-center gap-4 text-xs font-medium">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+              Visitors
+            </div>
+            <div className="flex items-center gap-1.5 text-emerald-600">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+              Revenue
+            </div>
+          </div>
+        </div>
+        <div className="h-[350px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={data.chart_data || []}>
+              <defs>
+                <linearGradient id="colorVisitors" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                </linearGradient>
+                <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.1}/>
+                  <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+              <XAxis dataKey="date" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
+              <YAxis yAxisId="left" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
+              <YAxis yAxisId="right" orientation="right" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
+              <Tooltip 
+                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+              />
+              <Area yAxisId="left" type="monotone" dataKey="visitors" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorVisitors)" />
+              <Area yAxisId="right" type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Booking Funnel */}
+        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-semibold text-gray-900">Conversion Funnel</h2>
+            <PieIcon className="w-5 h-5 text-slate-400" />
+          </div>
+          <div className="space-y-6">
+            {data.funnel_data?.map((stage, idx) => {
+              const totalVisits = data.funnel_data?.[0]?.count || 1;
+              const percentage = Math.round((stage.count / totalVisits) * 100);
+              return (
+                <div key={stage.stage} className="relative group">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold text-slate-700">{getStageLabel(stage.stage)}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-slate-900">{stage.count}</span>
+                      <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded uppercase">{percentage}%</span>
+                    </div>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                    <div 
+                      className={`h-full rounded-full transition-all duration-1000 ${
+                        idx === 0 ? 'bg-slate-900' : 
+                        idx === 1 ? 'bg-blue-600' : 
+                        idx === 2 ? 'bg-indigo-500' : 'bg-emerald-500'
+                      }`}
+                      style={{ width: `${percentage}%` }}
+                    ></div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Top Rooms Performance */}
+        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-semibold text-gray-900">Best Performing Rooms</h2>
+            <TrendingUp className="w-5 h-5 text-emerald-500" />
+          </div>
+          <div className="space-y-2">
+            {data.top_rooms && data.top_rooms.length > 0 ? data.top_rooms.map((room, idx) => (
+              <div key={room.id} className="flex items-center justify-between p-4 rounded-xl border border-transparent hover:border-slate-100 hover:bg-slate-50/50 transition-all group">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center font-bold group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                    {idx + 1}
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-gray-900">{room.name || `Room ID: ${room.id}`}</p>
+                    <p className="text-xs text-gray-500 flex items-center gap-1">
+                      <Users className="w-3 h-3" /> {room.views} views
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] text-slate-400 uppercase tracking-tighter">Performance</p>
+                </div>
+              </div>
+            )) : (
+              <div className="text-center py-12 text-gray-400">No performance data</div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Primary Financial KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <MetricCard 
-          title="Total Revenue"
-          value={`₹${(data.revenue_total || 0).toLocaleString()}`}
-          subtitle="Gross earnings"
-          icon={<DollarSign className="w-6 h-6" />}
-          color="blue"
-          trend="+12.5%"
-          trendUp={true}
-        />
-        <MetricCard 
-          title="Average Daily Rate"
-          value={`₹${(data.avg_daily_rate || 0).toLocaleString()}`}
-          subtitle="Revenue per occupied room"
-          icon={<TrendingUp className="w-6 h-6" />}
-          color="emerald"
-          trend="+4.2%"
-          trendUp={true}
-        />
-        <MetricCard 
-          title="Occupancy Rate"
-          value={`${data.occupancy_rate || 0}%`}
-          subtitle="Inventory utilization"
-          icon={<Calendar className="w-6 h-6" />}
-          color="amber"
-          trend="-2.1%"
-          trendUp={false}
-        />
-        <MetricCard 
-          title="RevPAR"
-          value={`₹${(data.rev_par || 0).toLocaleString()}`}
-          subtitle="Revenue per available room"
-          icon={<Zap className="w-6 h-6" />}
-          color="purple"
-          trend="+8.9%"
-          trendUp={true}
-        />
-      </div>
-
-      {/* Secondary Operational KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <OperationalMiniCard 
-          title="Avg. Length of Stay"
-          value={`${data.alos || 0} Nights`}
-          icon={<Clock className="w-4 h-4" />}
-          description="Optimal stay duration for profit"
-        />
-        <OperationalMiniCard 
-          title="Cancellation Rate"
-          value={`${data.cancellation_rate || 0}%`}
-          icon={<ArrowDownRight className="w-4 h-4" />}
-          description="Revenue leakage this period"
-          warning={data.cancellation_rate && data.cancellation_rate > 15 ? true : false}
-        />
-        <OperationalMiniCard 
-          title="Avg. Lead Time"
-          value={`${data.avg_lead_time || 0} Days`}
-          icon={<Calendar className="w-4 h-4" />}
-          description="Days before check-in booking"
-        />
-      </div>
-
-      {/* Main Performance Visualization */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-8">
-          {/* Revenue Performance Multi-Axis Chart */}
-          <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/50">
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <h2 className="text-xl font-black text-slate-900">Performance Dynamics</h2>
-                <p className="text-sm text-slate-500 font-medium">Correlation between Traffic, ADR, and Revenue</p>
-              </div>
-              <div className="flex items-center gap-6">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-blue-500 shadow-lg shadow-blue-200" />
-                  <span className="text-xs font-bold text-slate-600">Visitors</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-emerald-500 shadow-lg shadow-emerald-200" />
-                  <span className="text-xs font-bold text-slate-600">Revenue</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="h-[400px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={data.chart_data}>
-                  <defs>
-                    <linearGradient id="gradVisitors" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2}/>
-                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                    </linearGradient>
-                    <linearGradient id="gradRevenue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="8 8" vertical={false} stroke="#f1f5f9" />
-                  <XAxis 
-                    dataKey="date" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{fontSize: 11, fontWeight: 700, fill: '#94a3b8'}}
-                    dy={10}
-                    tickFormatter={(val) => val.split('-').slice(1).join('/')}
-                  />
-                  <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{fontSize: 11, fontWeight: 700, fill: '#94a3b8'}} />
-                  <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{fontSize: 11, fontWeight: 700, fill: '#94a3b8'}} />
-                  <Tooltip 
-                    contentStyle={{ borderRadius: '24px', border: 'none', boxShadow: '0 25px 50px -12px rgb(0 0 0 / 0.15)', padding: '20px' }}
-                    itemStyle={{ fontWeight: 800, fontSize: '12px' }}
-                  />
-                  <Area yAxisId="left" type="monotone" dataKey="visitors" stroke="#3b82f6" strokeWidth={4} fill="url(#gradVisitors)" />
-                  <Area yAxisId="right" type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={4} fill="url(#gradRevenue)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
+      {/* Geo Location Breakdown */}
+      <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Geographical Traffic</h2>
+            <p className="text-xs text-gray-500">Top 5 regions by visitor volume</p>
           </div>
+          <Globe className="w-5 h-5 text-blue-500" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+          {data?.geo_stats && data.geo_stats.length > 0 ? data.geo_stats.map((item) => (
+            <div key={item.country} className="p-4 rounded-2xl bg-slate-50 border border-slate-100 group hover:bg-blue-600 hover:border-blue-700 transition-all duration-300">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-8 h-6 rounded bg-white border border-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-400">
+                  {item.code}
+                </div>
+                <span className="text-sm font-bold text-slate-900 group-hover:text-white">{item.country}</span>
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-end gap-2">
+                  <span className="text-xl font-black text-slate-900 group-hover:text-white">{item.visitors}</span>
+                </div>
+                <div className="w-full bg-slate-200 rounded-full h-1 mt-2">
+                  <div className="bg-blue-600 group-hover:bg-white h-full rounded-full" style={{ width: `${item.percentage}%` }}></div>
+                </div>
+              </div>
+            </div>
+          )) : (
+            <div className="col-span-full text-center py-12 text-gray-400">
+              No geographical traffic data recorded yet.
+            </div>
+          )}
+        </div>
+      </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Conversion Funnel */}
-            <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-xl">
-              <h2 className="text-xl font-black text-slate-900 mb-8">Acquisition Funnel</h2>
-              <div className="space-y-8">
-                {data.funnel_data?.map((stage, idx) => {
-                  const totalVisits = data.funnel_data?.[0]?.count || 1;
-                  const percentage = Math.round((stage.count / totalVisits) * 100);
-                  const colors = ['bg-slate-900', 'bg-blue-600', 'bg-indigo-500', 'bg-emerald-500'];
-                  return (
-                    <div key={stage.stage}>
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-8 h-8 rounded-lg ${colors[idx]} flex items-center justify-center text-white text-[10px] font-black`}>
-                            0{idx + 1}
-                          </div>
-                          <span className="text-sm font-black text-slate-700 uppercase tracking-wider">{getStageLabel(stage.stage)}</span>
-                        </div>
-                        <span className="text-sm font-black text-slate-900">{stage.count} <span className="text-slate-400 font-bold ml-1">({percentage}%)</span></span>
-                      </div>
-                      <div className="w-full bg-slate-50 rounded-full h-3 p-0.5 border border-slate-100">
-                        <div className={`h-full rounded-full transition-all duration-1000 ${colors[idx]}`} style={{ width: `${percentage}%` }} />
-                      </div>
+      {/* ADVANCED HOTELIER KPI SECTION */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Most & Least Booked Rooms */}
+        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-semibold text-gray-900">Room Booking Popularity</h2>
+            <Layout className="w-5 h-5 text-gray-400" />
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-1.5">
+                <ArrowUpRight className="w-4 h-4 text-emerald-500" /> Most Booked
+              </h3>
+              <div className="space-y-2">
+                {data.most_booked_rooms && data.most_booked_rooms.some(r => r.count > 0) ? (
+                  data.most_booked_rooms.filter(r => r.count > 0).map((room) => (
+                    <div key={room.id} className="p-3 bg-emerald-50/50 border border-emerald-100/50 rounded-xl flex justify-between items-center">
+                      <span className="text-xs font-bold text-slate-700 truncate max-w-[150px]">{room.name}</span>
+                      <span className="bg-emerald-500 text-white text-xs font-black px-2 py-1 rounded-lg">{room.count} stays</span>
                     </div>
-                  );
-                })}
+                  ))
+                ) : (
+                  <p className="text-xs text-slate-400 italic">No bookings recorded.</p>
+                )}
               </div>
             </div>
 
-            {/* Geographical Map Mock/Stats */}
-            <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden relative">
-              <div className="absolute top-[-50px] right-[-50px] w-48 h-48 bg-blue-50 rounded-full blur-3xl opacity-50" />
-              <h2 className="text-xl font-black text-slate-900 mb-8 flex items-center gap-2">
-                <Globe className="w-5 h-5 text-blue-500" />
-                Global Reach
-              </h2>
-              <div className="space-y-5 relative z-10">
-                {data.geo_stats?.slice(0, 5).map((item) => (
-                  <div key={item.country} className="group">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-3">
-                        <span className="text-xl">{getCountryFlag(item.code)}</span>
-                        <span className="text-sm font-bold text-slate-700">{item.country}</span>
-                      </div>
-                      <span className="text-xs font-black text-slate-900">{item.visitors}</span>
+            <div>
+              <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-1.5">
+                <ArrowDownRight className="w-4 h-4 text-red-500" /> Least Booked
+              </h3>
+              <div className="space-y-2">
+                {data.least_booked_rooms && data.least_booked_rooms.length > 0 ? (
+                  data.least_booked_rooms.map((room) => (
+                    <div key={room.id} className="p-3 bg-slate-50 border border-slate-100 rounded-xl flex justify-between items-center">
+                      <span className="text-xs font-semibold text-slate-600 truncate max-w-[150px]">{room.name}</span>
+                      <span className="bg-slate-200 text-slate-600 text-xs font-bold px-2 py-1 rounded-lg">{room.count} stays</span>
                     </div>
-                    <div className="w-full bg-slate-50 rounded-full h-1.5">
-                      <div className="bg-blue-600 h-full rounded-full transition-all duration-1000" style={{ width: `${item.percentage}%` }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-8 pt-6 border-t border-slate-50 flex justify-center">
-                 <button className="text-xs font-black text-blue-600 uppercase tracking-widest hover:underline">View Full Geo Map</button>
+                  ))
+                ) : (
+                  <p className="text-xs text-slate-400 italic">No room types configured.</p>
+                )}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Real-time Intelligence Sidebar */}
-        <div className="space-y-8">
-          {/* Live Activity Feed */}
-          <div className="bg-slate-900 text-white p-8 rounded-[2.5rem] shadow-2xl shadow-slate-900/40 h-full flex flex-col">
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <h2 className="text-xl font-black">Live Intelligence</h2>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Real-time Feed</span>
-                </div>
-              </div>
-              <div className="bg-white/10 p-3 rounded-2xl">
-                <Activity className="w-5 h-5 text-white" />
-              </div>
+        {/* Promo Code & Drop-offs Section */}
+        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">Promo Code Utilization</h2>
+              <MousePointerClick className="w-5 h-5 text-indigo-500" />
             </div>
-
-            <div className="space-y-6 overflow-y-auto max-h-[600px] pr-2 custom-scrollbar">
-              {liveEvents.length > 0 ? liveEvents.map((event, idx) => (
-                <div key={event.id} className={`relative pl-8 pb-6 border-l border-white/10 last:pb-0 last:border-l-0 animate-in slide-in-from-right duration-500`} style={{ animationDelay: `${idx * 100}ms` }}>
-                  <div className={`absolute left-[-5px] top-0 w-[10px] h-[10px] rounded-full shadow-[0_0_10px_rgba(255,255,255,0.3)] ${
-                    event.type === 'booking' ? 'bg-emerald-500' : 
-                    event.type === 'checkout' ? 'bg-blue-400' : 'bg-slate-400'
-                  }`} />
-                  
-                  <div className="bg-white/5 hover:bg-white/10 p-4 rounded-2xl border border-white/10 transition-all cursor-default group">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className={`text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-tighter ${
-                        event.type === 'booking' ? 'bg-emerald-500 text-white' : 'bg-white/20 text-slate-300'
-                      }`}>
-                        {event.type}
-                      </span>
-                      <span className="text-[10px] font-bold text-slate-500">{event.timestamp}</span>
-                    </div>
-                    <p className="text-sm font-bold text-slate-200">{event.message}</p>
-                    {event.amount && (
-                      <p className="text-lg font-black text-emerald-400 mt-1">₹{event.amount.toLocaleString()}</p>
-                    )}
-                    <div className="mt-2 flex items-center gap-2 opacity-50 text-[10px] font-bold">
-                       <span>User from {getCountryFlag((event as any).country_code || 'IN')}</span>
-                       <span>•</span>
-                       <span>{(event as any).device === 'mobile' ? <Smartphone className="w-3 h-3" /> : <Monitor className="w-3 h-3" />}</span>
-                    </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+              {data.promo_stats && data.promo_stats.length > 0 ? (
+                data.promo_stats.map((promo) => (
+                  <div key={promo.code} className="p-3 bg-indigo-50/50 border border-indigo-100/50 rounded-xl flex justify-between items-center">
+                    <span className="text-xs font-mono font-bold text-indigo-700 bg-indigo-50 px-2 py-1 rounded border border-indigo-200">{promo.code}</span>
+                    <span className="text-xs font-bold text-indigo-900">{promo.bookings} uses</span>
                   </div>
-                </div>
-              )) : (
-                <div className="flex flex-col items-center justify-center py-20 text-slate-500 italic">
-                   <Clock className="w-10 h-10 mb-4 opacity-20" />
-                   <p className="text-sm">Waiting for live data...</p>
+                ))
+              ) : (
+                <div className="col-span-full py-6 text-center text-xs text-slate-400 italic bg-slate-50 rounded-xl border border-slate-100">
+                  No promo codes have been used in this period.
                 </div>
               )}
             </div>
+          </div>
 
-            <div className="mt-auto pt-8">
-              <div className="bg-white/5 rounded-3xl p-6 border border-white/10">
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Direct vs OTA</p>
-                <div className="flex items-center gap-4">
-                  <div className="flex-1">
-                    <div className="flex justify-between mb-2">
-                      <span className="text-xs font-black text-white">Direct</span>
-                      <span className="text-xs font-black text-emerald-400">82%</span>
-                    </div>
-                    <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
-                      <div className="bg-emerald-500 h-full rounded-full" style={{ width: '82%' }} />
-                    </div>
+          <div className="border-t border-slate-100 pt-4">
+            <h3 className="text-sm font-bold text-slate-800 mb-3">Customer Funnel Drop-off Rate</h3>
+            <div className="space-y-3">
+              {data.funnel_dropoffs && data.funnel_dropoffs.length > 0 ? (
+                data.funnel_dropoffs.map((drop) => (
+                  <div key={drop.stage} className="flex justify-between items-center">
+                    <span className="text-xs text-slate-500 font-medium">Drop-off from {getStageLabel(drop.stage)}</span>
+                    <span className={`text-xs font-bold px-2 py-1 rounded-lg ${drop.drop_percentage > 50 ? 'bg-red-50 text-red-600' : 'bg-orange-50 text-orange-600'}`}>
+                      {drop.drop_percentage}%
+                    </span>
                   </div>
-                </div>
-                <p className="text-[10px] text-slate-500 font-bold mt-4">💡 Optimized pricing is driving more direct bookings today.</p>
-              </div>
+                ))
+              ) : (
+                <p className="text-xs text-slate-400">Not enough conversions.</p>
+              )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Predictive & Distribution Row */}
+      {/* AI Performance & Guest Insights */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-1 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-semibold text-gray-900">AI Efficiency</h2>
+            <Activity className="w-5 h-5 text-amber-500" />
+          </div>
+          <div className="space-y-6">
+            <div className="flex flex-col items-center justify-center py-6 bg-slate-50 rounded-2xl border border-slate-100">
+               <span className="text-4xl font-black text-slate-900">{data.ai_resolution_rate}%</span>
+               <span className="text-xs font-bold text-slate-400 uppercase mt-2">Chat Resolution Rate</span>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-4 bg-blue-50 rounded-xl">
+                <p className="text-[10px] font-bold text-blue-600 uppercase">Total Leads</p>
+                <p className="text-xl font-black text-blue-900">{data.total_leads || 0}</p>
+              </div>
+              <div className="p-4 bg-amber-50 rounded-xl">
+                <p className="text-[10px] font-bold text-amber-600 uppercase">AI Bookings</p>
+                <p className="text-xl font-black text-amber-900">{data.ai_assisted_bookings || 0}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Popular Guest Inquiries</h2>
+              <p className="text-xs text-gray-500">What guests are asking the AI most frequently</p>
+            </div>
+            <MessageCircle className="w-5 h-5 text-blue-500" />
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {data.popular_questions && data.popular_questions.length > 0 ? data.popular_questions.map((q, idx) => (
+              <div 
+                key={idx}
+                className="px-4 py-2 bg-slate-50 border border-slate-100 rounded-full flex items-center gap-2 hover:bg-blue-600 hover:text-white hover:border-blue-700 transition-all cursor-default group"
+              >
+                <span className="text-sm font-bold">{q.text}</span>
+                <span className="text-[10px] font-black px-1.5 py-0.5 bg-slate-200 text-slate-600 rounded-md group-hover:bg-white group-hover:text-blue-600">
+                  {q.value}
+                </span>
+              </div>
+            )) : (
+              <div className="w-full py-12 text-center text-gray-400 italic">
+                AI hasn't collected enough inquiries yet.
+              </div>
+            )}
+          </div>
+          <div className="mt-8 p-4 bg-blue-50 rounded-xl border border-blue-100">
+            <p className="text-xs text-blue-700 font-medium">
+              💡 **Pro Tip:** Use these insights to update your room descriptions or add FAQs to the dashboard.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Advanced Traffic Heatmap */}
+      <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Traffic Peaks Heatmap</h2>
+            <p className="text-xs text-gray-500">Find the busiest hours to launch promotions</p>
+          </div>
+          <Clock className="w-5 h-5 text-gray-400" />
+        </div>
+        <div className="overflow-x-auto">
+          <div className="min-w-[750px] p-2 bg-slate-50 rounded-xl border border-slate-100">
+            <div style={{ display: 'grid', gridTemplateColumns: '80px repeat(24, minmax(0, 1fr))', gap: '4px' }}>
+              {/* Header row for hours */}
+              <div className="h-6"></div>
+              {Array.from({ length: 24 }).map((_, h) => (
+                <div key={h} className="text-[9px] text-center font-bold text-slate-400 flex items-center justify-center">
+                  {h}
+                </div>
+              ))}
+
+              {/* Rows for weekdays */}
+              {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day, dIdx) => (
+                <React.Fragment key={day}>
+                  <div className="text-xs font-bold text-slate-500 flex items-center pr-2">
+                    {day}
+                  </div>
+                  {Array.from({ length: 24 }).map((_, hIdx) => {
+                    const cell = data.traffic_heatmap?.find(
+                      (item) => item.weekday === dIdx && item.hour === hIdx
+                    );
+                    const count = cell?.visitors || 0;
+                    const maxCount = Math.max(...(data.traffic_heatmap?.map(c => c.visitors) || [1]), 1);
+                    const opacity = count > 0 ? 0.2 + (count / maxCount) * 0.8 : 0.05;
+                    const bgColor = count > 0 ? `rgba(59, 130, 246, ${opacity})` : '#ffffff';
+                    
+                    return (
+                      <div 
+                        key={hIdx} 
+                        title={`${day} @ ${hIdx}:00 -> ${count} visitors`}
+                        style={{ backgroundColor: bgColor }}
+                        className="h-7 rounded border border-slate-100/50 transition-all hover:scale-110 hover:shadow-sm cursor-pointer"
+                      />
+                    );
+                  })}
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+      {/* Predictive Intelligence & Revenue Mix */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Occupancy Forecast */}
-        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-xl">
-          <div className="flex items-center justify-between mb-8">
+        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+          <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-xl font-black text-slate-900">7-Day Predictive Occupancy</h2>
-              <p className="text-sm text-slate-500 font-medium">AI-driven demand forecasting</p>
+              <h2 className="text-lg font-semibold text-gray-900">7-Day Occupancy Forecast</h2>
+              <p className="text-xs text-gray-500">Predicted occupancy based on confirmed bookings</p>
             </div>
-            <div className="bg-indigo-50 p-3 rounded-2xl">
-              <TrendingUp className="w-5 h-5 text-indigo-600" />
-            </div>
+            <Calendar className="w-5 h-5 text-indigo-500" />
           </div>
-          <div className="h-[300px]">
-             <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={data.occupancy_forecast}>
-                  <defs>
-                    <linearGradient id="gradOcc" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.2}/>
-                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="8 8" vertical={false} stroke="#f1f5f9" />
-                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 700, fill: '#94a3b8'}} />
-                  <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 700, fill: '#94a3b8'}} unit="%" />
-                  <Tooltip 
-                    contentStyle={{ borderRadius: '24px', border: 'none', boxShadow: '0 25px 50px -12px rgb(0 0 0 / 0.15)' }}
-                    formatter={(val) => [`${val}%`, 'Predicted Occupancy']}
-                  />
-                  <Area type="monotone" dataKey="occupancy" stroke="#6366f1" strokeWidth={4} fill="url(#gradOcc)" />
-                </AreaChart>
-             </ResponsiveContainer>
+          <div className="h-[250px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={data.occupancy_forecast}>
+                <defs>
+                  <linearGradient id="colorOcc" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.1}/>
+                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{fontSize: 10, fill: '#64748b'}} />
+                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fill: '#64748b'}} unit="%" />
+                <Tooltip 
+                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                  formatter={(value) => [`${value}%`, 'Occupancy']}
+                />
+                <Area type="monotone" dataKey="occupancy" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorOcc)" />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Booking Window Distribution */}
-        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-xl">
-           <div className="flex items-center justify-between mb-8">
-            <div>
-              <h2 className="text-xl font-black text-slate-900">Booking Velocity</h2>
-              <p className="text-sm text-slate-500 font-medium">How far in advance guests book</p>
-            </div>
-            <div className="bg-amber-50 p-3 rounded-2xl">
-              <Clock className="w-5 h-5 text-amber-600" />
-            </div>
+        {/* Revenue Mix - Pie Chart */}
+        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+          <div className="flex items-center justify-between mb-6">
+             <h2 className="text-lg font-semibold text-gray-900">Revenue Mix by Room Type</h2>
+             <PieIcon className="w-5 h-5 text-emerald-500" />
           </div>
-          <div className="h-[300px]">
-             <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data.booking_window_data}>
-                  <CartesianGrid strokeDasharray="8 8" vertical={false} stroke="#f1f5f9" />
-                  <XAxis dataKey="window" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 700, fill: '#94a3b8'}} />
-                  <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 700, fill: '#94a3b8'}} />
-                  <Tooltip 
-                    cursor={{fill: '#f8fafc'}}
-                    contentStyle={{ borderRadius: '24px', border: 'none', boxShadow: '0 25px 50px -12px rgb(0 0 0 / 0.15)' }}
-                  />
-                  <Bar dataKey="count" fill="#f59e0b" radius={[12, 12, 0, 0]} barSize={40} />
-                </BarChart>
-             </ResponsiveContainer>
+          <div className="h-[250px] w-full flex items-center">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={data.revenue_by_room_type}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {data.revenue_by_room_type?.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                   formatter={(value: number) => `₹${value.toLocaleString()}`}
+                />
+                <Legend verticalAlign="bottom" height={36}/>
+              </PieChart>
+            </ResponsiveContainer>
           </div>
         </div>
       </div>
 
-      {/* Bottom Insights Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="lg:col-span-1 bg-white p-6 rounded-[2rem] border border-slate-100 shadow-lg">
-           <h3 className="text-sm font-black text-slate-900 mb-4 flex items-center gap-2">
-             <MessageCircle className="w-4 h-4 text-blue-500" />
-             AI Resolution Rate
-           </h3>
-           <div className="flex items-end gap-3 mb-4">
-              <span className="text-5xl font-black text-slate-900">{data.ai_resolution_rate}%</span>
-              <span className="text-xs font-bold text-emerald-600 mb-1">+5.2% vs prev</span>
-           </div>
-           <div className="w-full bg-slate-50 h-2 rounded-full overflow-hidden">
-              <div className="bg-blue-600 h-full" style={{ width: `${data.ai_resolution_rate}%` }} />
-           </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Booking Window Analysis */}
+        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Booking Window Distribution</h2>
+              <p className="text-xs text-gray-500">How far in advance guests are booking</p>
+            </div>
+            <Clock className="w-5 h-5 text-slate-400" />
+          </div>
+          <div className="h-[250px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={data.booking_window_data}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="window" axisLine={false} tickLine={false} tick={{fontSize: 10, fill: '#64748b'}} />
+                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fill: '#64748b'}} />
+                <Tooltip 
+                  cursor={{fill: '#f8fafc'}}
+                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                />
+                <Bar dataKey="count" fill="#0ea5e9" radius={[4, 4, 0, 0]} barSize={40} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
-        <div className="lg:col-span-1 bg-white p-6 rounded-[2rem] border border-slate-100 shadow-lg">
-           <h3 className="text-sm font-black text-slate-900 mb-4 flex items-center gap-2">
-             <Zap className="w-4 h-4 text-amber-500" />
-             AI Assisted Revenue
-           </h3>
-           <div className="flex items-end gap-3 mb-4">
-              <span className="text-3xl font-black text-slate-900">₹{(data.ai_revenue || 0).toLocaleString()}</span>
-           </div>
-           <p className="text-xs font-bold text-slate-400 leading-relaxed">
-             {data.ai_assisted_bookings || 0} bookings secured via AI automation this period.
-           </p>
-        </div>
+        {/* Daily Pickup & Trend */}
+        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-center">
+           <div className="text-center space-y-4">
+              <div className="inline-flex p-4 bg-emerald-50 text-emerald-600 rounded-full mb-4">
+                <TrendingUp className="w-8 h-8" />
+              </div>
+              <h2 className="text-2xl font-black text-slate-900">Booking Pickup</h2>
+              <p className="text-slate-500 text-sm max-w-xs mx-auto">New bookings confirmed today vs yesterday</p>
+              
+              <div className="flex items-center justify-center gap-8 mt-6">
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase">Today</p>
+                  <p className="text-3xl font-black text-slate-900">{data.pickup_stats?.today || 0}</p>
+                </div>
+                <div className="h-12 w-[1px] bg-slate-100" />
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase">Yesterday</p>
+                  <p className="text-3xl font-black text-slate-400">{data.pickup_stats?.yesterday || 0}</p>
+                </div>
+              </div>
 
-        <div className="lg:col-span-2 bg-gradient-to-br from-indigo-600 to-blue-700 p-8 rounded-[2rem] text-white shadow-xl shadow-blue-200">
-           <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-black tracking-tight">Smart Strategy Suggestion</h3>
-              <div className="p-2 bg-white/20 rounded-xl">
-                 <Zap className="w-5 h-5 text-white" />
+              <div className={`mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold ${data.pickup_stats?.trend === 'up' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+                {data.pickup_stats?.trend === 'up' ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
+                {data.pickup_stats?.trend === 'up' ? 'Growth in Daily Pace' : 'Slow Daily Pace'}
               </div>
            </div>
-           <p className="text-sm font-medium leading-relaxed mb-6 opacity-90">
-             Based on your {data.cancellation_rate}% cancellation rate and current demand forecast, we suggest implementing a 
-             <span className="font-black"> "Non-Refundable Early Bird" </span> 
-             promotion for the upcoming weekend to secure revenue.
-           </p>
-           <button className="bg-white text-blue-700 px-6 py-3 rounded-2xl font-black text-sm shadow-xl hover:scale-105 transition-all">
-              Apply Strategy Now
-           </button>
         </div>
       </div>
     </div>
   );
 };
-
-const MetricCard: React.FC<{ 
-  title: string; 
-  value: string; 
-  subtitle: string; 
-  icon: React.ReactNode; 
-  color: 'blue' | 'emerald' | 'amber' | 'purple';
-  trend?: string;
-  trendUp?: boolean;
-}> = ({ title, value, subtitle, icon, color, trend, trendUp }) => {
-  const colors = {
-    blue: 'bg-blue-50 text-blue-600 border-blue-100 shadow-blue-100/50',
-    emerald: 'bg-emerald-50 text-emerald-600 border-emerald-100 shadow-emerald-100/50',
-    amber: 'bg-amber-50 text-amber-600 border-amber-100 shadow-amber-100/50',
-    purple: 'bg-purple-50 text-purple-600 border-purple-100 shadow-purple-100/50',
-  };
-
-  return (
-    <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 group hover:scale-[1.02] transition-all duration-500 relative overflow-hidden">
-      <div className={`absolute top-[-20%] right-[-10%] w-24 h-24 rounded-full opacity-5 group-hover:scale-150 transition-transform duration-700 ${colors[color].split(' ')[1]}`} style={{ background: 'currentColor' }} />
-      <div className="flex items-start justify-between relative z-10">
-        <div className={`p-4 rounded-2xl ${colors[color]} border shadow-lg`}>
-          {icon}
-        </div>
-        {trend && (
-          <div className={`flex items-center gap-1 text-[10px] font-black px-2.5 py-1 rounded-full border ${trendUp ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-red-50 text-red-600 border-red-100'}`}>
-            {trendUp ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-            {trend}
-          </div>
-        )}
-      </div>
-      <div className="mt-8 relative z-10">
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-2">{title}</p>
-        <h3 className="text-3xl font-black text-slate-900 tracking-tight leading-none">{value}</h3>
-        <p className="text-xs font-bold text-slate-400 mt-4 leading-none">{subtitle}</p>
-      </div>
-    </div>
-  );
-};
-
-const OperationalMiniCard: React.FC<{ 
-  title: string; 
-  value: string; 
-  icon: React.ReactNode; 
-  description: string;
-  warning?: boolean;
-}> = ({ title, value, icon, description, warning }) => (
-  <div className="bg-white px-6 py-5 rounded-[1.5rem] border border-slate-100 shadow-lg flex items-center gap-5 hover:bg-slate-50/50 transition-colors">
-    <div className={`p-3 rounded-xl ${warning ? 'bg-red-50 text-red-600' : 'bg-slate-50 text-slate-600'}`}>
-      {icon}
-    </div>
-    <div>
-      <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">{title}</p>
-      <p className="text-xl font-black text-slate-900">{value}</p>
-      <p className="text-[9px] font-bold text-slate-400 mt-0.5">{description}</p>
-    </div>
-  </div>
-);
-
-const getCountryFlag = (code: string) => {
-  const flags: Record<string, string> = {
-    'IN': '🇮🇳', 'US': '🇺🇸', 'GB': '🇬🇧', 'AE': '🇦🇪', 'DE': '🇩🇪', 
-    'AU': '🇦🇺', 'CA': '🇨🇦', 'FR': '🇫🇷', 'JP': '🇯🇵', 'CN': '🇨🇳'
-  };
-  return flags[code] || '🌐';
-};
-
 
 
 const StatCard: React.FC<{ 

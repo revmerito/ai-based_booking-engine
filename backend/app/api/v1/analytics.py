@@ -210,44 +210,17 @@ async def get_analytics_dashboard(current_user: CurrentUser, session: DbSession,
         res_rooms = await session.execute(rooms_q)
         top_rooms = [{"id": row[0], "views": row[1]} for row in res_rooms.all()]
         
-        # 4. Traffic Chart (Enhanced with ADR and RevPAR trends)
+        # 4. Traffic Chart
         sessions_q = select(AnalyticsSession.started_at).where(
             AnalyticsSession.hotel_id == hotel_id,
             AnalyticsSession.started_at >= start_date_naive
         )
         res_sessions = await session.execute(sessions_q)
-        traffic_by_day = { (datetime.utcnow().date() - timedelta(days=i)).strftime("%Y-%m-%d"): 0 for i in range(days) }
-        revenue_by_day = { (datetime.utcnow().date() - timedelta(days=i)).strftime("%Y-%m-%d"): 0 for i in range(days) }
-        rooms_by_day = { (datetime.utcnow().date() - timedelta(days=i)).strftime("%Y-%m-%d"): 0 for i in range(days) }
-
+        traffic_by_day = { (datetime.utcnow() - timedelta(days=i)).strftime("%Y-%m-%d"): 0 for i in range(days) }
         for row in res_sessions.all():
             d = row[0].strftime("%Y-%m-%d")
             if d in traffic_by_day: traffic_by_day[d] += 1
-            
-        for b in bookings:
-            d = b.created_at.strftime("%Y-%m-%d")
-            if d in revenue_by_day: 
-                revenue_by_day[d] += b.total_amount
-                rooms_by_day[d] += len(b.rooms)
-                
-        chart_data = []
-        for date_str in sorted(traffic_by_day.keys()):
-            visitors = traffic_by_day[date_str]
-            rev = revenue_by_day[date_str]
-            rooms = rooms_by_day[date_str]
-            
-            # Daily ADR
-            daily_adr = round(rev / rooms, 2) if rooms > 0 else 0
-            # Daily RevPAR
-            daily_revpar = round(rev / total_inventory, 2) if total_inventory > 0 else 0
-            
-            chart_data.append({
-                "date": date_str, 
-                "visitors": visitors, 
-                "revenue": rev,
-                "adr": daily_adr,
-                "revpar": daily_revpar
-            })
+        chart_data = [{"date": k, "visitors": v} for k, v in reversed(traffic_by_day.items())]
 
         # 5. Funnel Data
         # We'll count unique sessions that reached each stage
@@ -354,19 +327,17 @@ async def get_analytics_dashboard(current_user: CurrentUser, session: DbSession,
 
         # 2. Booking Window Distribution (How many days in advance)
         window_buckets = {"0-3 days": 0, "4-7 days": 0, "8-14 days": 0, "15-30 days": 0, "30+ days": 0}
-        lead_times = []
         for b in bookings:
             days_diff = (b.check_in - b.created_at.date()).days
-            lead_times.append(days_diff)
             if days_diff <= 3: window_buckets["0-3 days"] += 1
             elif days_diff <= 7: window_buckets["4-7 days"] += 1
             elif days_diff <= 14: window_buckets["8-14 days"] += 1
             elif days_diff <= 30: window_buckets["15-30 days"] += 1
             else: window_buckets["30+ days"] += 1
         booking_window_data = [{"window": k, "count": v} for k, v in window_buckets.items()]
-        avg_lead_time = round(sum(lead_times) / len(lead_times), 1) if lead_times else 0
 
         # 3. Occupancy Forecast (Next 7 Days)
+        # Fetch all future bookings
         future_q = select(Booking).where(
             Booking.hotel_id == hotel_id,
             Booking.check_out >= datetime.utcnow().date(),
@@ -393,21 +364,6 @@ async def get_analytics_dashboard(current_user: CurrentUser, session: DbSession,
         pickup_yesterday = len([b for b in bookings if b.created_at.date() == yesterday])
         pickup_trend = "up" if pickup_today >= pickup_yesterday else "down"
 
-        # 5. Cancellation Rate & ALOS
-        all_bookings_q = select(Booking).where(
-            Booking.hotel_id == hotel_id,
-            Booking.created_at >= start_date_naive
-        )
-        res_all_bookings = await session.execute(all_bookings_q)
-        all_bookings = res_all_bookings.scalars().all()
-        total_all_bookings = len(all_bookings)
-        cancelled_bookings = len([b for b in all_bookings if b.status == BookingStatus.CANCELLED])
-        cancellation_rate = round((cancelled_bookings / total_all_bookings * 100), 2) if total_all_bookings > 0 else 0
-        
-        # Average Length of Stay
-        stays = [(b.check_out - b.check_in).days for b in bookings]
-        alos = round(sum(stays) / len(stays), 1) if stays else 0
-
         # AI & LEAD INSIGHTS
         from app.models.lead import Lead
         leads_q = select(Lead).where(
@@ -418,9 +374,10 @@ async def get_analytics_dashboard(current_user: CurrentUser, session: DbSession,
         leads = res_leads.scalars().all()
         
         total_leads = len(leads)
-        ai_resolved_chats = total_leads 
+        ai_resolved_chats = total_leads # Assuming every lead is a chat session for now
         ai_resolution_rate = round((ai_resolved_chats / total_visitors * 100), 2) if total_visitors > 0 else 0
         
+        # Extract keywords/popular questions from lead messages
         questions_map = {}
         stop_words = {"i", "want", "to", "book", "a", "the", "room", "for", "is", "of", "and", "in", "it", "can", "have", "you", "my", "hi", "hello"}
         for lead in leads:
@@ -428,12 +385,15 @@ async def get_analytics_dashboard(current_user: CurrentUser, session: DbSession,
             if source_text:
                 words = source_text.lower().split()
                 for w in words:
+                    # Clean words and filter
                     clean_w = ''.join(e for e in w if e.isalnum())
                     if len(clean_w) > 3 and clean_w not in stop_words:
                         questions_map[clean_w] = questions_map.get(clean_w, 0) + 1
         
         popular_questions = sorted([{"text": k, "value": v} for k, v in questions_map.items()], key=lambda x: x["value"], reverse=True)[:10]
 
+        # AI Revenue Attribution (Bookings that came from leads)
+        # We check if a booking email matches a lead email in this period
         lead_emails = {l.guest_email.lower() for l in leads if l.guest_email}
         ai_revenue = sum(b.total_amount for b in bookings if b.guest and b.guest.email and b.guest.email.lower() in lead_emails)
         ai_assisted_bookings = len([b for b in bookings if b.guest and b.guest.email and b.guest.email.lower() in lead_emails])
@@ -458,18 +418,15 @@ async def get_analytics_dashboard(current_user: CurrentUser, session: DbSession,
             "promo_stats": promo_stats,
             "traffic_heatmap": heatmap_list,
             "commission_saved": round(revenue_total * 0.15, 2),
-            "alos": alos,
-            "cancellation_rate": cancellation_rate,
-            "avg_lead_time": avg_lead_time,
             
-            # AI Fields
+            # New AI Fields
             "ai_resolution_rate": ai_resolution_rate,
             "ai_revenue": ai_revenue,
             "ai_assisted_bookings": ai_assisted_bookings,
             "popular_questions": popular_questions,
             "total_leads": total_leads,
 
-            # Advanced BI Fields
+            # NEW: Advanced BI Fields
             "revenue_by_room_type": revenue_by_room_type,
             "booking_window_data": booking_window_data,
             "occupancy_forecast": forecast_data,
@@ -510,10 +467,9 @@ async def get_live_feed(current_user: CurrentUser, session: DbSession, limit: in
     """
     Get the latest analytics events in real-time.
     """
-    from sqlalchemy.orm import joinedload
-    query = select(AnalyticsEvent).options(joinedload(AnalyticsEvent.session)).where(
+    query = select(AnalyticsEvent).join(AnalyticsSession).where(
         AnalyticsSession.hotel_id == current_user.hotel_id
-    ).join(AnalyticsSession).order_by(AnalyticsEvent.created_at.desc()).limit(limit)
+    ).order_by(AnalyticsEvent.created_at.desc()).limit(limit)
     
     result = await session.execute(query)
     events = result.scalars().all()
@@ -523,8 +479,6 @@ async def get_live_feed(current_user: CurrentUser, session: DbSession, limit: in
             "event": e.event_type,
             "page": e.page_url,
             "time": e.created_at.isoformat(),
-            "metadata": e.metadata_json,
-            "country": e.session.country,
-            "device": e.session.device_type
+            "metadata": e.metadata_json
         } for e in events
     ]
