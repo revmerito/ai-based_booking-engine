@@ -174,15 +174,28 @@ export function ChatWidget({ hotelSlug, primaryColor = '#3B82F6' }: ChatWidgetPr
                                                                 li: ({ children }) => <li className="text-[13px]">{children}</li>,
                                                             }}
                                                         >
-                                                            {msg.content.split("ACTION:BOOKING_LINK|")[0].replace(/\[IMAGES: .*?\]/g, '')}
+                                                            {msg.content.split("ACTION:BOOKING_LINK|")[0].replace(/\[IMAGES: .*?\]/g, '').replace(/https:\/\/.*?\.(jpg|jpeg|png|webp)(\?.*?)?/gi, '')}
                                                         </ReactMarkdown>
                                                     </div>
 
-                                                    {/* Room Image Gallery Injection */}
-                                                    {msg.role === 'assistant' && msg.content.includes("[IMAGES:") && (
+                                                    {/* Room Image Gallery Injection (Both Tagged and Naked URLs) */}
+                                                    {msg.role === 'assistant' && (
                                                         <div className="mt-2 grid grid-cols-2 gap-1.5">
-                                                            {msg.content.match(/\[IMAGES: (.*?)\]/)?.[1].split(',').map((url, idx) => (
-                                                                <div key={idx} className="relative aspect-[4/3] rounded-lg overflow-hidden border border-gray-100 group">
+                                                            {/* 1. Handle [IMAGES: ...] tag */}
+                                                            {msg.content.includes("[IMAGES:") && msg.content.match(/\[IMAGES: (.*?)\]/)?.[1].split(',').map((url, idx) => (
+                                                                <div key={`tagged-${idx}`} className="relative aspect-[4/3] rounded-lg overflow-hidden border border-gray-100 group">
+                                                                    <img 
+                                                                        src={url.trim()} 
+                                                                        alt="Room" 
+                                                                        className="w-full h-full object-cover transition-transform group-hover:scale-110"
+                                                                        onError={(e) => (e.currentTarget.style.display = 'none')}
+                                                                    />
+                                                                </div>
+                                                            ))}
+                                                            
+                                                            {/* 2. Handle Naked Supabase URLs (Fallback) */}
+                                                            {!msg.content.includes("[IMAGES:") && msg.content.match(/https:\/\/iupgzyilraahuwqnkgqq\.supabase\.co\/storage\/v1\/object\/public\/hotel-assets\/[a-zA-Z0-9-]+\.(jpg|jpeg|png|webp)/gi)?.map((url, idx) => (
+                                                                <div key={`naked-${idx}`} className="relative aspect-[4/3] rounded-lg overflow-hidden border border-gray-100 group">
                                                                     <img 
                                                                         src={url.trim()} 
                                                                         alt="Room" 
