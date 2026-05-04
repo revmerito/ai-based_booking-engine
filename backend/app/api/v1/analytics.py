@@ -159,7 +159,7 @@ async def get_analytics_dashboard(current_user: CurrentUser, session: DbSession,
         booking_q = select(Booking).where(
             Booking.hotel_id == hotel_id,
             Booking.created_at >= start_date_naive
-        ).options(joinedload(Booking.rooms))
+        )
         bookings = (await session.execute(booking_q)).scalars().unique().all()
         
         room_types_q = select(RoomType).where(RoomType.hotel_id == hotel_id)
