@@ -201,7 +201,7 @@ async def get_analytics_dashboard(current_user: CurrentUser, session: DbSession,
                     funnel_counts[stage] += 1
         funnel_data = [{"stage": k, "count": v} for k, v in funnel_counts.items()]
 
-        # 7. Heatmap (Robust grouping)
+        # 7. Heatmap (Audited Timezone Logic)
         from zoneinfo import ZoneInfo
         from app.models.hotel import Hotel
         hotel_obj = await session.get(Hotel, hotel_id)
@@ -210,13 +210,14 @@ async def get_analytics_dashboard(current_user: CurrentUser, session: DbSession,
         
         heatmap_counts = {}
         for s in sessions:
-            # Ensure we handle both naive and aware datetimes for timezone conversion
-            dt = s.started_at
-            if dt.tzinfo is None:
-                dt = dt.replace(tzinfo=timezone.utc)
-            dt_local = dt.astimezone(target_tz)
+            # sessions are UTC in DB. Convert to Hotel Local Time.
+            dt_utc = s.started_at.replace(tzinfo=timezone.utc)
+            dt_local = dt_utc.astimezone(target_tz)
             
-            k = f"{dt_local.weekday()}-{dt_local.hour}"
+            # Python weekday: 0=Mon, 6=Sun. Matches frontend ["Mon",...,"Sun"]
+            wd = dt_local.weekday()
+            hr = dt_local.hour
+            k = f"{wd}-{hr}"
             heatmap_counts[k] = heatmap_counts.get(k, 0) + 1
         
         heatmap_list = []
@@ -234,26 +235,47 @@ async def get_analytics_dashboard(current_user: CurrentUser, session: DbSession,
         rev_par = round(revenue_total / total_rooms_available, 2) if total_rooms_available > 0 else 0
         occupancy_rate = round((total_rooms_sold / total_rooms_available * 100), 2) if total_rooms_available > 0 else 0
 
-        # 9. AI Efficiency (Refined: Only count sessions that interacted with AI)
-        ai_sessions = [s for s in sessions if any(e.event_type == "ai_inquiry" for e in s.events)]
-        ai_leads_count = len(ai_sessions)
+        # 9. AI Efficiency (Deep Integration with Lead table)
+        from app.models.lead import Lead
+        leads_q = select(Lead).where(Lead.hotel_id == hotel_id, Lead.created_at >= start_date_naive)
+        res_leads = await session.execute(leads_q)
+        leads = res_leads.scalars().all()
+        
+        total_leads_count = len(leads)
+        # Engagement: Sessions that had AI inquiry OR became a Lead
+        ai_engaged_sessions = [s for s in sessions if any(e.event_type == "ai_inquiry" for e in s.events)]
+        ai_engagement_count = len(ai_engaged_sessions)
+        
+        # AI Bookings: Source is ai_agent
         ai_bookings_count = len([b for b in bookings if b.source == 'ai_agent'])
         
-        # Resolution rate: How many people who chatted actually booked
-        res_rate = round((ai_bookings_count / ai_leads_count * 100), 2) if ai_leads_count > 0 else 0
+        # Resolution Rate: Conversions / Engagements
+        res_rate = round((ai_bookings_count / ai_engagement_count * 100), 2) if ai_engagement_count > 0 else 0
         
-        # Popular Inquiries
+        # Popular Inquiries (Extract from Lead summaries if available)
         keywords = {}
-        stop_words = {"the", "a", "is", "of", "to", "in", "and", "i", "how", "want", "book"}
-        for s in ai_sessions:
+        stop_words = {"the", "a", "is", "of", "to", "in", "and", "i", "how", "want", "book", "for", "with", "this", "that"}
+        
+        # Source 1: Analytics Events
+        for s in ai_engaged_sessions:
             for e in s.events:
                 if e.event_type == "ai_inquiry" and e.metadata_json:
                     words = e.metadata_json.lower().split()
                     for w in words:
-                        w_clean = ''.join(c for c in w if c.isalnum())
-                        if len(w_clean) > 3 and w_clean not in stop_words:
-                            keywords[w_clean] = keywords.get(w_clean, 0) + 1
-        popular_questions = [{"text": k, "value": v} for k, v in sorted(keywords.items(), key=lambda x: x[1], reverse=True)[:10]]
+                        w_c = ''.join(c for c in w if c.isalnum())
+                        if len(w_c) > 3 and w_c not in stop_words:
+                            keywords[w_c] = keywords.get(w_c, 0) + 1
+        
+        # Source 2: Lead Summaries
+        for l in leads:
+            if l.ai_conversation_summary:
+                words = l.ai_conversation_summary.lower().split()
+                for w in words:
+                    w_c = ''.join(c for c in w if c.isalnum())
+                    if len(w_c) > 3 and w_c not in stop_words:
+                        keywords[w_c] = keywords.get(w_c, 0) + 1
+                        
+        popular_questions = [{"text": k.capitalize(), "value": v} for k, v in sorted(keywords.items(), key=lambda x: x[1], reverse=True)[:10]]
 
         # 10. Geo Stats
         geo_counts = {}
@@ -347,7 +369,8 @@ async def get_analytics_dashboard(current_user: CurrentUser, session: DbSession,
             "traffic_heatmap": heatmap_list,
             "ai_resolution_rate": res_rate,
             "popular_questions": popular_questions,
-            "total_leads": ai_leads_count, # Refined: Now only AI-engaged leads
+            "total_leads": total_leads_count,
+            "ai_engaged": ai_engagement_count,
             "ai_assisted_bookings": ai_bookings_count,
             "device_stats": device_stats,
             "geo_stats": geo_stats,
@@ -366,6 +389,7 @@ async def get_analytics_dashboard(current_user: CurrentUser, session: DbSession,
             },
             "commission_saved": round(revenue_total * 0.15, 2)
         }
+
 
 
     except Exception as e:
