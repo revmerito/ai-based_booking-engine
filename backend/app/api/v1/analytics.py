@@ -201,7 +201,7 @@ async def get_analytics_dashboard(current_user: CurrentUser, session: DbSession,
                     funnel_counts[stage] += 1
         funnel_data = [{"stage": k, "count": v} for k, v in funnel_counts.items()]
 
-        # 7. Heatmap (Local Timezone)
+        # 7. Heatmap (Robust grouping)
         from zoneinfo import ZoneInfo
         from app.models.hotel import Hotel
         hotel_obj = await session.get(Hotel, hotel_id)
@@ -210,7 +210,12 @@ async def get_analytics_dashboard(current_user: CurrentUser, session: DbSession,
         
         heatmap_counts = {}
         for s in sessions:
-            dt_local = s.started_at.replace(tzinfo=timezone.utc).astimezone(target_tz)
+            # Ensure we handle both naive and aware datetimes for timezone conversion
+            dt = s.started_at
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            dt_local = dt.astimezone(target_tz)
+            
             k = f"{dt_local.weekday()}-{dt_local.hour}"
             heatmap_counts[k] = heatmap_counts.get(k, 0) + 1
         
@@ -220,7 +225,7 @@ async def get_analytics_dashboard(current_user: CurrentUser, session: DbSession,
                 k = f"{wd}-{hr}"
                 heatmap_list.append({"weekday": wd, "hour": hr, "visitors": heatmap_counts.get(k, 0)})
 
-        # 8. Financial Metrics (Accurate calculation based on rooms sold, not just booking count)
+        # 8. Financial Metrics
         revenue_total = sum(b.total_amount for b in bookings if b.status != 'cancelled')
         total_rooms_sold = sum(len(b.rooms) for b in bookings if b.status != 'cancelled')
         total_rooms_available = total_inventory * days
@@ -229,20 +234,25 @@ async def get_analytics_dashboard(current_user: CurrentUser, session: DbSession,
         rev_par = round(revenue_total / total_rooms_available, 2) if total_rooms_available > 0 else 0
         occupancy_rate = round((total_rooms_sold / total_rooms_available * 100), 2) if total_rooms_available > 0 else 0
 
-        # 9. AI Efficiency & Inquiries
+        # 9. AI Efficiency (Refined: Only count sessions that interacted with AI)
+        ai_sessions = [s for s in sessions if any(e.event_type == "ai_inquiry" for e in s.events)]
+        ai_leads_count = len(ai_sessions)
         ai_bookings_count = len([b for b in bookings if b.source == 'ai_agent'])
-        res_rate = round((ai_bookings_count / total_visitors * 100), 2) if total_visitors > 0 else 0
         
-        # Popular Inquiries (Keywords from metadata)
+        # Resolution rate: How many people who chatted actually booked
+        res_rate = round((ai_bookings_count / ai_leads_count * 100), 2) if ai_leads_count > 0 else 0
+        
+        # Popular Inquiries
         keywords = {}
         stop_words = {"the", "a", "is", "of", "to", "in", "and", "i", "how", "want", "book"}
-        for s in sessions:
+        for s in ai_sessions:
             for e in s.events:
                 if e.event_type == "ai_inquiry" and e.metadata_json:
                     words = e.metadata_json.lower().split()
                     for w in words:
-                        if len(w) > 3 and w not in stop_words:
-                            keywords[w] = keywords.get(w, 0) + 1
+                        w_clean = ''.join(c for c in w if c.isalnum())
+                        if len(w_clean) > 3 and w_clean not in stop_words:
+                            keywords[w_clean] = keywords.get(w_clean, 0) + 1
         popular_questions = [{"text": k, "value": v} for k, v in sorted(keywords.items(), key=lambda x: x[1], reverse=True)[:10]]
 
         # 10. Geo Stats
@@ -262,7 +272,7 @@ async def get_analytics_dashboard(current_user: CurrentUser, session: DbSession,
             })
         geo_stats.sort(key=lambda x: x["visitors"], reverse=True)
 
-        # 11. Room Popularity (Views & Bookings)
+        # 11. Room Popularity
         room_stats = {r.id: {"id": r.id, "name": r.name, "views": 0, "bookings": 0, "revenue": 0} for r in room_types}
         for s in sessions:
             for e in s.events:
@@ -308,7 +318,7 @@ async def get_analytics_dashboard(current_user: CurrentUser, session: DbSession,
             else: window_buckets["30+ days"] += 1
         booking_window_data = [{"window": k, "count": v} for k, v in window_buckets.items()]
 
-        # 15. Occupancy Forecast (Next 7 Days)
+        # 15. Occupancy Forecast
         future_q = select(Booking).where(Booking.hotel_id == hotel_id, Booking.check_out >= datetime.utcnow().date(), Booking.status != "cancelled")
         future_bookings = (await session.execute(future_q)).scalars().all()
         forecast = []
@@ -337,7 +347,7 @@ async def get_analytics_dashboard(current_user: CurrentUser, session: DbSession,
             "traffic_heatmap": heatmap_list,
             "ai_resolution_rate": res_rate,
             "popular_questions": popular_questions,
-            "total_leads": total_visitors,
+            "total_leads": ai_leads_count, # Refined: Now only AI-engaged leads
             "ai_assisted_bookings": ai_bookings_count,
             "device_stats": device_stats,
             "geo_stats": geo_stats,
@@ -356,6 +366,7 @@ async def get_analytics_dashboard(current_user: CurrentUser, session: DbSession,
             },
             "commission_saved": round(revenue_total * 0.15, 2)
         }
+
 
     except Exception as e:
         import logging
