@@ -1,14 +1,15 @@
 {
     "manifest_version": 3,
     "name": "Staybooker Companion",
-    "version": "2.5",
+    "version": "2.6",
     "description": "Secure Distributed Rate Scraping Client for Staybooker",
     "permissions": [
         "activeTab",
         "scripting",
         "storage",
         "tabs",
-        "alarms"
+        "alarms",
+        "notifications"
     ],
     "host_permissions": [
         "https://www.makemytrip.com/*",

@@ -139,11 +139,12 @@ function executeRateScrapeJob(comp, isFirst = false) {
             }
         };
 
-        // Timeout fallback
+        // Timeout fallback (extended to 60s)
         const timeout = setTimeout(() => {
             console.warn(`[Job] Timeout for ${comp.id}`);
+            showNotification(`Timeout: ${comp.name}`, "Taking too long to load.");
             finish({ error: "TIMEOUT" });
-        }, CONFIG.SCRAPE_TIMEOUT_MS);
+        }, 60000);
 
         chrome.runtime.onMessage.addListener(onMsg);
 
@@ -156,43 +157,68 @@ function executeRateScrapeJob(comp, isFirst = false) {
         let targetUrl = comp.url;
         if (!targetUrl.startsWith('http')) targetUrl = 'https://' + targetUrl;
 
-        // Try to create the tab
+        showNotification("Syncing Rates", `Opening ${comp.name}...`);
+
         try {
-            // Open as ACTIVE so the user can see it working (requested fix)
             chrome.tabs.create({ url: targetUrl, active: true }, (tab) => {
                 if (chrome.runtime.lastError || !tab) {
                     console.error("[Job] Tab creation failed:", chrome.runtime.lastError);
+                    showNotification("Error", "Failed to open browser tab.");
                     finish({ error: "TAB_CREATION_FAILED" });
                     return;
                 }
                 
                 tabId = tab.id;
-                console.log(`[Job] Tab created: ${tabId}. Waiting for load...`);
+                console.log(`[Job] Tab created: ${tabId}.`);
 
-                // Wait for tab to finish loading
-                const checkLoad = (tid, info) => {
+                // Wait for tab to finish loading OR just wait 5 seconds as fallback
+                let injected = false;
+                const doInject = (tid) => {
+                    if (injected) return;
+                    injected = true;
+                    console.log(`[Job] Injecting script into tab ${tid}...`);
+                    
+                    chrome.scripting.executeScript({
+                        target: { tabId: tid },
+                        files: ["scraper.js"]
+                    }).catch((err) => {
+                        console.error(`[Job] Injection failed:`, err);
+                        finish({ error: "INJECTION_FAILED" });
+                    });
+                };
+
+                const listener = (tid, info) => {
                     if (tid === tabId && info.status === 'complete') {
-                        chrome.tabs.onUpdated.removeListener(checkLoad);
-                        console.log(`[Job] Tab ${tid} loaded. Injecting script...`);
-                        
-                        // Small delay to ensure DOM is ready
-                        setTimeout(() => {
-                            chrome.scripting.executeScript({
-                                target: { tabId: tid },
-                                files: ["scraper.js"]
-                            }).catch((err) => {
-                                console.error(`[Job] Injection failed for tab ${tid}:`, err);
-                                finish({ error: "INJECTION_FAILED" });
-                            });
-                        }, 2000);
+                        chrome.tabs.onUpdated.removeListener(listener);
+                        setTimeout(() => doInject(tid), 2000);
                     }
                 };
-                chrome.tabs.onUpdated.addListener(checkLoad);
+                chrome.tabs.onUpdated.addListener(listener);
+
+                // Safety fallback: If listener doesn't fire in 10s, try injecting anyway
+                setTimeout(() => {
+                    if (!injected && tabId) {
+                        chrome.tabs.onUpdated.removeListener(listener);
+                        doInject(tabId);
+                    }
+                }, 10000);
             });
         } catch (e) {
-            console.error("[Job] Fatal error during tab creation:", e);
+            console.error("[Job] Fatal error:", e);
             finish({ error: "FATAL_ERROR" });
         }
+    });
+}
+
+function showNotification(title, message) {
+    chrome.notifications.create({
+        type: 'basic',
+        iconUrl: 'icon.png', // Fallback to a default icon if not exists
+        title: `Staybooker: ${title}`,
+        message: message,
+        priority: 2
+    }, (id) => {
+        if (chrome.runtime.lastError) console.warn("Notification error:", chrome.runtime.lastError);
     });
 }
 
@@ -204,26 +230,38 @@ function executeRateScrapeJob(comp, isFirst = false) {
 async function sendToBackend(data, endpoint) {
     try {
         const url = CONFIG.API_BASE + endpoint;
-        const headers = { "Content-Type": "application/json" };
-        if (state.authToken) headers["Authorization"] = `Bearer ${state.authToken}`;
+        const headers = { 
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+        };
+        
+        if (state.authToken) {
+            headers["Authorization"] = `Bearer ${state.authToken}`;
+        }
 
-        // Unify payload format if needed. ingest expects list.
         const body = Array.isArray(data) ? data : [data];
-
-        // SPECIAL CASE: RateIngestRequest expects { rates: [...] }
         const finalBody = endpoint === CONFIG.ENDPOINTS.RATES_INGEST ? { rates: body } : body;
 
-        console.log(`[API] Sending to ${endpoint}:`, JSON.stringify(finalBody));
+        console.log(`[API] Sending to ${endpoint}...`);
 
         const response = await fetch(url, {
             method: "POST",
             headers: headers,
             body: JSON.stringify(finalBody)
         });
-        if (!response.ok) console.warn(`[API] ${endpoint} returned ${response.status}`);
-        else console.log(`[API] ${endpoint} Success`);
+
+        const resData = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            console.warn(`[API] ${endpoint} failed: ${response.status}`);
+            showNotification("Save Failed", `Server returned ${response.status}: ${resData.detail || 'Unknown Error'}`);
+        } else {
+            console.log(`[API] ${endpoint} Success`);
+            showNotification("Rates Saved", resData.message || "Competitor prices updated in Supabase.");
+        }
     } catch (e) {
-        console.error(`[API] ${endpoint} Failed`, e);
+        console.error(`[API] ${endpoint} Critical Error`, e);
+        showNotification("Connection Error", "Could not reach the Staybooker server.");
     }
 }
 
