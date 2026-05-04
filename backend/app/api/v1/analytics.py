@@ -220,12 +220,14 @@ async def get_analytics_dashboard(current_user: CurrentUser, session: DbSession,
                 k = f"{wd}-{hr}"
                 heatmap_list.append({"weekday": wd, "hour": hr, "visitors": heatmap_counts.get(k, 0)})
 
-        # 8. Financial Metrics
+        # 8. Financial Metrics (Accurate calculation based on rooms sold, not just booking count)
         revenue_total = sum(b.total_amount for b in bookings if b.status != 'cancelled')
+        total_rooms_sold = sum(len(b.rooms) for b in bookings if b.status != 'cancelled')
         total_rooms_available = total_inventory * days
-        avg_daily_rate = round(revenue_total / total_conversions, 2) if total_conversions > 0 else 0
+        
+        avg_daily_rate = round(revenue_total / total_rooms_sold, 2) if total_rooms_sold > 0 else 0
         rev_par = round(revenue_total / total_rooms_available, 2) if total_rooms_available > 0 else 0
-        occupancy_rate = round((total_conversions / total_rooms_available * 100), 2) if total_rooms_available > 0 else 0
+        occupancy_rate = round((total_rooms_sold / total_rooms_available * 100), 2) if total_rooms_available > 0 else 0
 
         # 9. AI Efficiency & Inquiries
         ai_bookings_count = len([b for b in bookings if b.source == 'ai_agent'])
