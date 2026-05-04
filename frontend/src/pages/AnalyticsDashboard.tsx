@@ -557,11 +557,7 @@ export const AnalyticsDashboard: React.FC = () => {
               </div>
             )}
           </div>
-          <div className="mt-8 p-4 bg-blue-50 rounded-xl border border-blue-100">
-            <p className="text-xs text-blue-700 font-medium">
-              💡 **Pro Tip:** Use these insights to update your room descriptions or add FAQs to the dashboard.
-            </p>
-          </div>
+
         </div>
       </div>
 
