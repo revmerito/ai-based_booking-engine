@@ -129,8 +129,12 @@ export function ChatWidget({ hotelSlug, primaryColor: initialPrimaryColor = '#3B
                                 }}
                             >
                                 <div className="flex items-center gap-3">
-                                    <div className="bg-white/20 p-2 rounded-2xl backdrop-blur-md border border-white/20 shadow-lg flex items-center justify-center w-11 h-11 text-white">
-                                        <Bot className="w-6 h-6" />
+                                    <div className="bg-white/20 p-2 rounded-2xl backdrop-blur-md border border-white/20 shadow-lg flex items-center justify-center w-11 h-11 text-white overflow-hidden">
+                                        {hotelInfo?.logo_url ? (
+                                            <img src={hotelInfo.logo_url} alt="Hotel Logo" className="w-full h-full object-contain" />
+                                        ) : (
+                                            <Bot className="w-6 h-6" />
+                                        )}
                                     </div>
                                     <div className="flex flex-col justify-center">
                                         <span className="text-[16px] font-extrabold text-white leading-tight tracking-tight max-w-[180px] truncate">
@@ -165,7 +169,11 @@ export function ChatWidget({ hotelSlug, primaryColor: initialPrimaryColor = '#3B
                                                     {msg.role === 'user' ? (
                                                         <User className="w-4 h-4 text-white" />
                                                     ) : (
-                                                        <img src="/webmerito-icon.png" alt="AI" className="w-5 h-5 object-contain" />
+                                                        hotelInfo?.logo_url ? (
+                                                            <img src={hotelInfo.logo_url} alt="AI" className="w-5 h-5 object-contain" />
+                                                        ) : (
+                                                            <Bot className="w-4 h-4 text-gray-500" />
+                                                        )
                                                     )}
                                                 </div>
 

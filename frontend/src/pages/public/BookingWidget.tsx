@@ -97,9 +97,25 @@ export default function BookingWidget() {
     };
 
     return (
-        <div className="w-full flex justify-center font-sans p-2 lg:p-4">
-            {/* Main Container - Modern Floating Card */}
-            <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl p-2 lg:p-3 w-full max-w-6xl flex flex-col lg:flex-row items-center gap-2 lg:gap-4 border border-white/20 ring-1 ring-black/5">
+        <div className={cn(
+            "w-full flex justify-center font-sans p-2 lg:p-4 transition-all duration-300",
+            config?.widget_layout === 'minimal' ? "max-w-4xl" : "max-w-6xl"
+        )}>
+            {/* Main Container - Dynamic Styles based on Layout */}
+            <div 
+                className={cn(
+                    "w-full flex flex-col lg:flex-row items-center gap-2 lg:gap-4 transition-all duration-300",
+                    // Modern Layout (Default)
+                    config?.widget_layout === 'modern' || !config?.widget_layout ? 
+                        "bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl p-3 border border-white/20 ring-1 ring-black/5" : 
+                    // Classic Layout
+                    config?.widget_layout === 'classic' ?
+                        "bg-white rounded-none shadow-md p-4 border-2 border-slate-200" :
+                    // Minimal Layout
+                    "bg-slate-900/90 backdrop-blur-md rounded-xl p-2 text-white border border-slate-700"
+                )}
+                style={config?.widget_layout === 'minimal' ? { backgroundColor: config?.primary_color } : {}}
+            >
 
                 {/* DATE GROUP */}
                 <div className="flex w-full lg:flex-[2] gap-2">
@@ -276,7 +292,11 @@ export default function BookingWidget() {
                 {/* SEARCH BUTTON */}
                 <div className="w-full lg:w-auto pt-4 lg:pt-6 lg:pb-1">
                     <Button
-                        className="w-full lg:w-32 h-14 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold text-base shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:scale-[1.02] transition-all duration-200 flex items-center justify-center gap-2"
+                        className="w-full lg:w-32 h-14 rounded-xl text-white font-bold text-base shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200 flex items-center justify-center gap-2"
+                        style={{ 
+                            background: config?.primary_color || 'linear-gradient(to right, #4F46E5, #7C3AED)',
+                            boxShadow: `0 10px 15px -3px ${config?.primary_color}40`
+                        }}
                         onClick={handleSearch}
                     >
                         <Search className="w-5 h-5" />

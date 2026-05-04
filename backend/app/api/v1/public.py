@@ -135,7 +135,9 @@ async def get_widget_config(hotel_slug: str, session: DbSession):
         
     return {
         "hotel_name": hotel.name,
+        "logo_url": settings.widget_logo_url or hotel.logo_url,
         "primary_color": hotel.primary_color,
+        "widget_layout": settings.widget_layout if settings else "modern",
         "widget_background_color": settings.widget_background_color if settings else "#FFFFFF",
         "allowed_domains": allowed_domains,
         "widget_enabled": widget_enabled
