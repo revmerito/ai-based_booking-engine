@@ -170,7 +170,11 @@ async def get_analytics_dashboard(current_user: CurrentUser, session: DbSession,
         total_visitors = len(sessions)
         total_conversions = len([b for b in bookings if b.status != 'cancelled'])
         conversion_rate = round((total_conversions / total_visitors * 100), 2) if total_visitors > 0 else 0
-        avg_time = int(sum(s.time_spent_seconds for s in sessions) / total_visitors) if total_visitors > 0 else 0
+        # 3. Basic Aggregations
+        total_visitors = len(sessions)
+        total_conversions = len([b for b in bookings if b.status != 'cancelled'])
+        conversion_rate = round((total_conversions / total_visitors * 100), 2) if total_visitors > 0 else 0
+        avg_time = int(sum(s.time_spent_seconds or 0 for s in sessions) / total_visitors) if total_visitors > 0 else 0
         
         # 4. Device Stats
         device_counts = {}
@@ -227,8 +231,8 @@ async def get_analytics_dashboard(current_user: CurrentUser, session: DbSession,
                 heatmap_list.append({"weekday": wd, "hour": hr, "visitors": heatmap_counts.get(k, 0)})
 
         # 8. Financial Metrics
-        revenue_total = sum(b.total_amount for b in bookings if b.status != 'cancelled')
-        total_rooms_sold = sum(len(b.rooms) for b in bookings if b.status != 'cancelled')
+        revenue_total = sum(float(b.total_amount or 0) for b in bookings if b.status != 'cancelled')
+        total_rooms_sold = sum(len(b.rooms or []) for b in bookings if b.status != 'cancelled')
         total_rooms_available = total_inventory * days
         
         avg_daily_rate = round(revenue_total / total_rooms_sold, 2) if total_rooms_sold > 0 else 0
