@@ -33,7 +33,7 @@ function getContrastText(hexcolor: string) {
 
 export function ChatWidget({ hotelSlug, primaryColor: initialPrimaryColor = '#3B82F6' }: ChatWidgetProps) {
     const [isOpen, setIsOpen] = useState(false);
-    const [hotelInfo, setHotelInfo] = useState<{ name: string, primary_color: string } | null>(null);
+    const [hotelInfo, setHotelInfo] = useState<{ name: string, primary_color: string, logo_url?: string } | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -49,7 +49,7 @@ export function ChatWidget({ hotelSlug, primaryColor: initialPrimaryColor = '#3B
                 const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8001/api/v1'}/public/hotels/slug/${hotelSlug}/widget-config`);
                 if (res.ok) {
                     const data = await res.json();
-                    setHotelInfo({ name: data.hotel_name, primary_color: data.primary_color });
+                    setHotelInfo({ name: data.hotel_name, primary_color: data.primary_color, logo_url: data.logo_url });
                     setMessages([{ role: 'assistant', content: `Hello! I am the virtual concierge for ${data.hotel_name}. How can I assist you today?` }]);
                 } else {
                     setMessages([{ role: 'assistant', content: 'Hello! How can I assist you with your stay today?' }]);

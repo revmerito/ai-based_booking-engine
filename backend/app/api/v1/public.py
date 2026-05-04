@@ -135,9 +135,9 @@ async def get_widget_config(hotel_slug: str, session: DbSession):
         
     return {
         "hotel_name": hotel.name,
-        "logo_url": settings.widget_logo_url or hotel.logo_url,
+        "logo_url": (getattr(settings, 'widget_logo_url', None) or hotel.logo_url) if settings else hotel.logo_url,
         "primary_color": hotel.primary_color,
-        "widget_layout": settings.widget_layout if settings else "modern",
+        "widget_layout": getattr(settings, 'widget_layout', 'modern') if settings else "modern",
         "widget_background_color": settings.widget_background_color if settings else "#FFFFFF",
         "allowed_domains": allowed_domains,
         "widget_enabled": widget_enabled
@@ -663,6 +663,6 @@ async def chat_with_guest_ai(
         
     except Exception as e:
         import traceback
-        logger.error(f"Guest AI Error: {e}", exc_info=True)
-        # Fallback response if AI fails (e.g. Ollama offline)
-        return GuestChatResponse(response=f"I am experiencing technical difficulties. Please try again or contact the front desk.")
+        logger.error(f"Guest AI Error for hotel {hotel.id}: {traceback.format_exc()}")
+        # Fallback response if AI fails
+        return GuestChatResponse(response=f"I'm having trouble connecting. Please try again or reach out directly!")

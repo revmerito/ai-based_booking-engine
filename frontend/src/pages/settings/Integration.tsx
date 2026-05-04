@@ -495,8 +495,8 @@ const IntegrationPage = () => {
                                 <Label>Preview</Label>
                                 <div className="p-8 bg-slate-50 rounded-xl border border-slate-100 h-64 flex items-center justify-center relative overflow-hidden">
                                     <div className="absolute bottom-4 right-4 bg-white p-2 rounded-full shadow-lg border border-purple-100 flex items-center gap-2">
-                                        <img src="/webmerito-icon.png" alt="Chat" className="w-8 h-8" />
-                                        <span className="font-bold text-sm text-purple-600">I m saaraa ai !</span>
+                                        <MessageCircle className="w-6 h-6 text-purple-500" />
+                                        <span className="font-bold text-sm text-purple-600">{hotel?.name || 'AI Concierge'}</span>
                                     </div>
                                     <p className="text-muted-foreground text-sm">Widget appears at bottom-right</p>
                                 </div>
