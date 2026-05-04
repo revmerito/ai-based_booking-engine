@@ -254,11 +254,72 @@ async def get_analytics_dashboard(current_user: CurrentUser, session: DbSession,
             pct = round((count / total_visitors * 100), 1) if total_visitors > 0 else 0
             geo_stats.append({
                 "country": country,
-                "code": "IN" if country == "India" else "US" if country == "United States" else "XX", # Simple mapping
+                "code": "IN" if country == "India" else "US" if country == "United States" else "XX",
                 "visitors": count,
                 "percentage": pct
             })
         geo_stats.sort(key=lambda x: x["visitors"], reverse=True)
+
+        # 11. Room Popularity (Views & Bookings)
+        room_stats = {r.id: {"id": r.id, "name": r.name, "views": 0, "bookings": 0, "revenue": 0} for r in room_types}
+        for s in sessions:
+            for e in s.events:
+                if e.event_type == "room_view" and e.room_type_id in room_stats:
+                    room_stats[e.room_type_id]["views"] += 1
+        
+        for b in bookings:
+            if b.status != 'cancelled':
+                for rm in b.rooms:
+                    rt_id = rm.get("room_type_id")
+                    if rt_id in room_stats:
+                        room_stats[rt_id]["bookings"] += 1
+                        room_stats[rt_id]["revenue"] += rm.get("total_price", 0)
+
+        most_booked = sorted(room_stats.values(), key=lambda x: x["bookings"], reverse=True)
+        least_booked = sorted(room_stats.values(), key=lambda x: x["bookings"])
+        top_rooms = sorted(room_stats.values(), key=lambda x: x["views"], reverse=True)[:5]
+        revenue_mix = [{"name": r["name"], "value": r["revenue"]} for r in most_booked if r["revenue"] > 0]
+
+        # 12. Funnel Drop-offs
+        funnel_dropoffs = []
+        for i in range(len(funnel_data) - 1):
+            curr_val = funnel_data[i]["count"]
+            next_val = funnel_data[i+1]["count"]
+            drop_pct = round(((curr_val - next_val) / curr_val * 100), 1) if curr_val > 0 else 0
+            funnel_dropoffs.append({"stage": funnel_data[i]["stage"], "drop_percentage": drop_pct})
+
+        # 13. Promo Stats
+        promo_counts = {}
+        for b in bookings:
+            if b.promo_code:
+                promo_counts[b.promo_code] = promo_counts.get(b.promo_code, 0) + 1
+        promo_stats = [{"code": k, "bookings": v} for k, v in promo_counts.items()]
+
+        # 14. Booking Window Distribution
+        window_buckets = {"0-3 days": 0, "4-7 days": 0, "8-14 days": 0, "15-30 days": 0, "30+ days": 0}
+        for b in bookings:
+            days_diff = (b.check_in - b.created_at.date()).days
+            if days_diff <= 3: window_buckets["0-3 days"] += 1
+            elif days_diff <= 7: window_buckets["4-7 days"] += 1
+            elif days_diff <= 14: window_buckets["8-14 days"] += 1
+            elif days_diff <= 30: window_buckets["15-30 days"] += 1
+            else: window_buckets["30+ days"] += 1
+        booking_window_data = [{"window": k, "count": v} for k, v in window_buckets.items()]
+
+        # 15. Occupancy Forecast (Next 7 Days)
+        future_q = select(Booking).where(Booking.hotel_id == hotel_id, Booking.check_out >= datetime.utcnow().date(), Booking.status != "cancelled")
+        future_bookings = (await session.execute(future_q)).scalars().all()
+        forecast = []
+        for i in range(7):
+            d = (datetime.utcnow() + timedelta(days=i)).date()
+            occupied = sum(len(b.rooms) for b in future_bookings if b.check_in <= d < b.check_out)
+            forecast.append({"date": d.strftime("%m/%d"), "occupancy": round((occupied / total_inventory * 100), 1)})
+
+        # 16. Pickup Stats
+        today = datetime.utcnow().date()
+        yesterday = today - timedelta(days=1)
+        pickup_today = len([b for b in bookings if b.created_at.date() == today])
+        pickup_yesterday = len([b for b in bookings if b.created_at.date() == yesterday])
 
         return {
             "total_visitors": total_visitors,
@@ -277,7 +338,21 @@ async def get_analytics_dashboard(current_user: CurrentUser, session: DbSession,
             "total_leads": total_visitors,
             "ai_assisted_bookings": ai_bookings_count,
             "device_stats": device_stats,
-            "geo_stats": geo_stats
+            "geo_stats": geo_stats,
+            "most_booked_rooms": most_booked[:5],
+            "least_booked_rooms": least_booked[:5],
+            "top_rooms": top_rooms,
+            "revenue_by_room_type": revenue_mix,
+            "funnel_dropoffs": funnel_dropoffs,
+            "promo_stats": promo_stats,
+            "booking_window_data": booking_window_data,
+            "occupancy_forecast": forecast,
+            "pickup_stats": {
+                "today": pickup_today,
+                "yesterday": pickup_yesterday,
+                "trend": "up" if pickup_today >= pickup_yesterday else "down"
+            },
+            "commission_saved": round(revenue_total * 0.15, 2)
         }
 
     except Exception as e:
