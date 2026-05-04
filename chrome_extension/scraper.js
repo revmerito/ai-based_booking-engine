@@ -4,7 +4,7 @@
 
 (function () {
     const HOST = window.location.hostname;
-    const DEBUG = false; // Set to false for production to hide banner & logs
+    const DEBUG = true; // Set to true to show visual banners during scraping
 
     if (DEBUG) console.log("[Extension] Scraper Injected on:", HOST);
 

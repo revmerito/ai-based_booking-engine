@@ -115,11 +115,14 @@ function executeRateScrapeJob(comp, isFirst = false) {
         let tabId = null;
         let isResolved = false;
 
-        console.log(`[Job] Starting Execution for ${comp.id}. isFirst: ${isFirst}`);
+        console.log(`[Job] Starting Execution for ${comp.id}. URL: ${comp.url}`);
 
         const cleanup = () => {
             chrome.runtime.onMessage.removeListener(onMsg);
-            if (tabId) chrome.tabs.remove(tabId).catch(() => { });
+            if (tabId) {
+                chrome.tabs.remove(tabId).catch(() => { });
+                tabId = null;
+            }
         };
 
         const finish = (data) => {
@@ -136,7 +139,7 @@ function executeRateScrapeJob(comp, isFirst = false) {
             }
         };
 
-        // Faster timeout logic if injection fails
+        // Timeout fallback
         const timeout = setTimeout(() => {
             console.warn(`[Job] Timeout for ${comp.id}`);
             finish({ error: "TIMEOUT" });
@@ -153,32 +156,42 @@ function executeRateScrapeJob(comp, isFirst = false) {
         let targetUrl = comp.url;
         if (!targetUrl.startsWith('http')) targetUrl = 'https://' + targetUrl;
 
-        // SILENT MODE: All tabs open in background so user stay in the app
-        chrome.tabs.create({ url: targetUrl, active: false }, (tab) => {
-            tabId = tab.id;
+        // Try to create the tab
+        try {
+            // Open as ACTIVE so the user can see it working (requested fix)
+            chrome.tabs.create({ url: targetUrl, active: true }, (tab) => {
+                if (chrome.runtime.lastError || !tab) {
+                    console.error("[Job] Tab creation failed:", chrome.runtime.lastError);
+                    finish({ error: "TAB_CREATION_FAILED" });
+                    return;
+                }
+                
+                tabId = tab.id;
+                console.log(`[Job] Tab created: ${tabId}. Waiting for load...`);
 
-            // Check if already loaded
-            if (tab.status === 'complete') {
-                inject(tabId);
-            } else {
-                chrome.tabs.onUpdated.addListener(function listener(tid, info) {
+                // Wait for tab to finish loading
+                const checkLoad = (tid, info) => {
                     if (tid === tabId && info.status === 'complete') {
-                        chrome.tabs.onUpdated.removeListener(listener);
-                        inject(tabId);
+                        chrome.tabs.onUpdated.removeListener(checkLoad);
+                        console.log(`[Job] Tab ${tid} loaded. Injecting script...`);
+                        
+                        // Small delay to ensure DOM is ready
+                        setTimeout(() => {
+                            chrome.scripting.executeScript({
+                                target: { tabId: tid },
+                                files: ["scraper.js"]
+                            }).catch((err) => {
+                                console.error(`[Job] Injection failed for tab ${tid}:`, err);
+                                finish({ error: "INJECTION_FAILED" });
+                            });
+                        }, 2000);
                     }
-                });
-            }
-        });
-
-        function inject(tid) {
-            console.log(`[Job] Injecting scraper into tab ${tid}`);
-            chrome.scripting.executeScript({
-                target: { tabId: tid },
-                files: ["scraper.js"]
-            }).catch((err) => {
-                console.error(`[Job] Injection failed for tab ${tid}:`, err);
-                finish({ error: "INJECTION_FAILED" });
+                };
+                chrome.tabs.onUpdated.addListener(checkLoad);
             });
+        } catch (e) {
+            console.error("[Job] Fatal error during tab creation:", e);
+            finish({ error: "FATAL_ERROR" });
         }
     });
 }
