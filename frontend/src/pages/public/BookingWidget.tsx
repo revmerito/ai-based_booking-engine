@@ -20,7 +20,7 @@ export default function BookingWidget() {
     // Fetch Widget Configuration
     useEffect(() => {
         if (!hotelSlug) return;
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1'; // Fallback
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8001/api/v1'; // Fallback
 
         fetch(`${apiUrl}/public/hotels/slug/${hotelSlug}/widget-config`)
             .then(res => {
