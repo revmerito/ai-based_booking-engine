@@ -116,7 +116,7 @@ class IntegrationSettingsRead(BaseModel):
     widget_theme: str
     widget_primary_color: str
     widget_position: str
-    widget_layout: str
+    widget_layout: Optional[str] = "modern"
     widget_logo_url: Optional[str] = None
     allowed_domains: str
     cors_enabled: bool
